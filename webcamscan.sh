@@ -44,6 +44,7 @@ function f_fix_own () {
 	# Не уверен, что это правильно.
 	local u=$(who am i | awk '{print $1}')
 	chown -R "$u:$u" "$1"
+	return 0
 }
 #
 # Обход по файлу с прогрессом: $1 - файл, $2... - коллбек
@@ -73,48 +74,47 @@ function f_write_all_hosts () {
 	f_fix_own "$file"
 }
 #
+# Сохраняет скриншот: $1 - трансляция, $2 - файл.
+function f_libav_screenshot () {
+	timeout -k 5 15 avconv -i "$1" -ss 3 -qscale 0 -t 1 -r 1 "$2" > /dev/null 2>&1
+	[[ -f "$2" ]] && f_fix_own "$2" &&	echo "Скриншот '$1' сохранен в '$2'."
+}
+#
 # Глубокое сканирование хоста: $1 - хост
 function f_deep_scan_host () {
 	rm -f "$STAGE3" "$STAGE4"
 	# 81,8008,8081 - Beward MJPG
 	nmap -vvv --privileged -T4 -n -PN -sS -sU -p T:80,T:81,T:8008,T:8080,T:8081,T:554,U:554 --reason \
 		--script "$SCRIPTS" --script-args "$SCRIPTS_ARGS" \
-		--host-timeout "$HOST_TIMELIMIT" "$1" "$STAGE3" > "$STAGE3"
-	F=''
-	if grep -q 'Valid credentials' "$STAGE3" ; then F="${F}_creds" ; fi # Флаг: Найден логин-пароль
-	if grep -q 'No valid accounts found' "$STAGE3" ; then F="${F}_nocreds" ; fi # Флаг: Не найден логин-пароль
-	if grep -q 'Discovered URLs' "$STAGE3" ; then
-		F="${F}_rtsp" # Флаг: Есть рабочие стримы
-		echo ' ' >> "$STAGE4"
-		M=0
+		--host-timeout "$HOST_TIMELIMIT" "$1" > "$STAGE3"
+	local f=''
+	grep -q 'Valid credentials' "$STAGE3" && f="${f}_creds" # Флаг: Найден логин-пароль
+	grep -q 'No valid accounts found' "$STAGE3" && f="${f}_nocreds" # Флаг: Не найден логин-пароль
+	grep -q 'Discovered URLs' "$STAGE3" && {
+		f="${f}_rtsp" # Флаг: Есть рабочие стримы
+		echo >> "$STAGE4"
+		m=0
 		for item3 in `grep -o "$REGEX_URL_RSTP" "$STAGE3"` ; do
-			if [ "$M" -ge "$LIBAV_LIMIT" ] ; then
+			if [ "$(( M++ ))" -ge "$LIBAV_LIMIT" ] ; then
 				echo "Достигнут LIBAV_LIMIT ($LIBAV_LIMIT)!" >> "$STAGE4"
 				break
 			fi
 			f_echo_subprogress
 			timeout -k 5 15 avprobe "$item3" >> "$STAGE4" 2>&1
-			if [ "$LIBAV_SCREENSHOT" = 'true' ] ; then
-				SCREENFILE="${OUT}/${item2}_${M}.jpg"
-				timeout -k 5 15 avconv -i "$item3" -ss 3 -qscale 0 -t 1 -r 1 "$SCREENFILE" > /dev/null 2>&1
-				if [ -f "$SCREENFILE" ] ; then
-					f_fix_own "$SCREENFILE"
-					echo "Скриншот '$item3' сохранен в '$SCREENFILE'." >> "$STAGE4"
-					echo ' ' >> "$STAGE4"
-				fi
-			fi
-			(( ++M ))
+			[[ "$LIBAV_SCREENSHOT" = 'true' ]] && f_libav_screenshot "$item3" "${OUT}/${item2}_${M}.jpg" >> "$STAGE4"
 		done
-		if grep -q 'Stream #[.0-9]*: Video' "$STAGE4" ; then F="${F}_video" ; fi # Флаг: Есть видео
-		if grep -q 'Stream #[.0-9]*: Audio' "$STAGE4" ; then F="${F}_audio" ; fi # Флаг: Есть звук
-		if grep -q 'Interleaved RTP mode is not supported yet' "$STAGE4" ; then F="${F}_tcp" ; fi # Флаг: TCP
+		if grep -q 'Stream #[.0-9]*: Video' "$STAGE4" ; then f="${f}_video" ; fi # Флаг: Есть видео
+		if grep -q 'Stream #[.0-9]*: Audio' "$STAGE4" ; then f="${f}_audio" ; fi # Флаг: Есть звук
+		if grep -q 'Interleaved RTP mode is not supported yet' "$STAGE4" ; then f="${f}_tcp" ; fi # Флаг: TCP
 		cat "$STAGE4" >> "$STAGE3"
-	fi 
+	}
 	cat "$STAGE3" >> "${OUT}/all.txt" # ! Дозапись
-	INFOFILE="${OUT}/${item2}${F}_.txt"
+	INFOFILE="${OUT}/${item2}${f}_.txt"
 	cat "$STAGE3" >> "$INFOFILE" # ! Дозапись
 	f_fix_own "$INFOFILE"
 }
+#
+# ОСНОВНОЙ КОД
 #
 echo "Первый этап: Поиск..."
 rm -f "$DISCOVERED1"
