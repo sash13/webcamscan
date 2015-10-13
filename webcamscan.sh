@@ -29,7 +29,14 @@ RTSPREGEX='rtsp:\/\/[0-9.]\+\/\S*'
 function f_echo_progress () { echo -n " $(bc -l <<< "scale=1; 100.0*($1-0.5)/$2")%" ; }
 function f_echo_subprogress () { echo -n '.' ; }
 #
-# Делает глубокое сканирование хоста: $1 - хост
+# Первичное сканирование целей: $1 - цели, stdout - найденые цели
+function f_scan () {
+	nmap --privileged -n -sS -sU -p T:554,U:554 --open --max-retries 3 --host-timeout 30s \
+		--randomize-hosts --min-parallelism=4 --min-hostgroup=4096 --max-hostgroup=65536 \
+		-oG - "$1" | grep 'open/' | grep -o "$IPREGEX" | uniq
+}
+#
+# Глубокое сканирование хоста: $1 - хост
 function f_deep_scan_host () {
 	rm -f "$STAGE3" "$STAGE4"
 	# 81,8008,8081 - Beward MJPG
@@ -91,12 +98,7 @@ I=1
 rm -f "$DISCOVERED1"
 while IFS=$'\n' read -r item1 || [[ -n "$item1" ]] ; do
 	f_echo_progress "$I" "$N"
-	rm -f "$STAGE1" "$STAGE2"
-	echo "$item1" > "$STAGE1"
-	nmap --privileged -n -sS -sU -p T:554,U:554 --open --max-retries 3 --host-timeout 30s \
-		--randomize-hosts --min-parallelism=4 --min-hostgroup=4096 --max-hostgroup=65536 \
-		-iL "$STAGE1" -oG "$STAGE2" > /dev/null 2>&1
-	grep 'open/' "$STAGE2" | grep -o "$IPREGEX" | uniq >> "$DISCOVERED1"
+	f_scan "$item1" > "$DISCOVERED1"
 	(( ++I ))
 done < "$1"
 echo " "
