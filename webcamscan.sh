@@ -25,6 +25,10 @@ CLEANUP="${CLEANUP:-true}"
 IPREGEX='[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'
 RTSPREGEX='rtsp:\/\/[0-9.]\+\/\S*'
 #
+# $1 - позиция, $2 - максимум.
+function f_echo_progress () { echo -n " $(bc -l <<< "scale=1; 100.0*($1-0.5)/$2")%" ; }
+function f_echo_subprogress () { echo -n '.' ; }
+#
 OUT="${OUT:-$1-webcam}"
 mkdir -p "$OUT"
 TMP="${TMP:-$OUT/tmp}"
@@ -43,7 +47,7 @@ N=$(wc -l < "$1")
 I=1
 rm -f "$DISCOVERED1"
 while IFS=$'\n' read -r item1 || [[ -n "$item1" ]] ; do
-	echo -n " $(bc -l <<< "scale=1; 100.0*($I-0.5)/$N")%"
+	f_echo_progress "$I" "$N"
 	rm -f "$STAGE1" "$STAGE2"
 	echo "$item1" > "$STAGE1"
 	nmap --privileged -n -sS -sU -p T:554,U:554 --open --max-retries 3 --host-timeout 30s \
@@ -73,7 +77,7 @@ SCRIPTS_ARGS="$SCRIPTS_ARGS,rtsp-url-brute.urlfile='$RTSP_URLS'"
 SCRIPTS_ARGS="$SCRIPTS_ARGS,brute.retries=10240,http-auth.path='/',http-form-brute.path='/',http-brute.path='/'"
 I=1
 while IFS= read -r item2 || [[ -n "$item2" ]] ; do
-	echo -n " $(bc -l <<< "scale=1; 100.0*($I-0.5)/$N")%"
+	f_echo_progress "$I" "$N"
 	rm -f "$STAGE3" "$STAGE4"
 	# 81,8008,8081 - Beward MJPG
 	nmap -vvv --privileged -T4 -n -PN -sS -sU -p T:80,T:81,T:8008,T:8080,T:8081,T:554,U:554 --reason \
@@ -91,7 +95,7 @@ while IFS= read -r item2 || [[ -n "$item2" ]] ; do
 				echo "Достигнут LIBAV_LIMIT ($LIBAV_LIMIT)!" >> "$STAGE4"
 				break
 			fi
-			echo -n '.'
+			f_echo_subprogress
 			timeout -k 5 15 avprobe "$item3" >> "$STAGE4" 2>&1
 			if [ "$LIBAV_SCREENSHOT" = 'true' ] ; then
 				SCREENFILE="${OUT}/${item2}_${M}.jpg"
