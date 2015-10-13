@@ -36,6 +36,13 @@ function f_scan () {
 		-oG - "$1" | grep 'open/' | grep -o "$IPREGEX" | uniq
 }
 #
+# Записывает найденые хосты в выход: $1 - файл с хостами
+function f_write_all_hosts () {
+	local ALL_HOSTS_LIST_FILE="${OUT}/all_hosts.txt"
+	cat "$1" >> "$ALL_HOSTS_LIST_FILE"
+	chown -R "$U:$U" "$ALL_HOSTS_LIST_FILE"
+}
+#
 # Глубокое сканирование хоста: $1 - хост
 function f_deep_scan_host () {
 	rm -f "$STAGE3" "$STAGE4"
@@ -103,11 +110,8 @@ while IFS=$'\n' read -r item1 || [[ -n "$item1" ]] ; do
 done < "$1"
 echo " "
 cat "$DISCOVERED1" | sort -R - | uniq > "$DISCOVERED2"
-if [ "$WRITE_ALL_HOSTS" = 'true' ] ; then
-	ALL_HOSTS_LIST_FILE="${OUT}/all_hosts.txt"
-	cat "$DISCOVERED2" >> "$ALL_HOSTS_LIST_FILE"
-	chown -R "$U:$U" "$ALL_HOSTS_LIST_FILE"
-fi
+[[ "$WRITE_ALL_HOSTS" = 'true' ]] && f_write_all_hosts "$DISCOVERED2"
+
 N=$(wc -l < "$DISCOVERED2")
 echo "Найдено $N потенциальных камер."
 #
@@ -127,7 +131,7 @@ while IFS= read -r item2 || [[ -n "$item2" ]] ; do
 	(( ++I ))
 done < "$DISCOVERED2"
 echo " "
-if [ "$CLEANUP" = 'true' ] ; then rm -rf "$TMP" ; fi
+[[ "$CLEANUP" = 'true' ]] && rm -rf "$TMP"
 chown -R "$U:$U" "$OUT"
 #
 echo "Готово!"
