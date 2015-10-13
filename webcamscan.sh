@@ -37,15 +37,15 @@ function f_iterate_file () {
 	local i=0
 	while IFS=$'\n' read -r item || [[ -n "$item" ]] ; do
 		f_echo_progress "$(( i++ ))" "$n"
-		$@ #INVOKE CALLBACK
+		$@ "$item" #INVOKE CALLBACK
 	done < "$file"
 }
 #
-# Первичное сканирование целей: $1 - цели, stdout - найденые цели
+# Первичное сканирование целей: $1 - куда сохранять, $2 - цели 
 function f_scan () {
 	nmap --privileged -n -sS -sU -p T:554,U:554 --open --max-retries 3 --host-timeout 30s \
 		--randomize-hosts --min-parallelism=4 --min-hostgroup=4096 --max-hostgroup=65536 \
-		-oG - "$1" | grep 'open/' | grep -o "$IPREGEX" | uniq
+		-oG - "$2" | grep 'open/' | grep -o "$IPREGEX" | uniq >> "$1"
 }
 #
 # Записывает найденые хосты в выход: $1 - файл с хостами
@@ -112,13 +112,7 @@ STAGE4="$TMP/stage.4.tmp"
 #
 echo "Первый этап: Поиск..."
 rm -f "$DISCOVERED1"
-N=$(( $(wc -l < "$1") + 1 ))
-I=1
-while IFS=$'\n' read -r item1 || [[ -n "$item1" ]] ; do
-	f_echo_progress "$(( I++ ))" "$N"
-	f_scan "$item1" > "$DISCOVERED1"
-done < "$1"
-echo " "
+f_iterate_file "$1" f_scan "$DISCOVERED1"
 cat "$DISCOVERED1" | sort -R - | uniq > "$DISCOVERED2"
 [[ "$WRITE_ALL_HOSTS" = 'true' ]] && f_write_all_hosts "$DISCOVERED2"
 
@@ -133,12 +127,9 @@ fi
 SCRIPTS_ARGS="unpwdb.timelimit='$BRUTEFORCE_TIMELIMIT'"
 SCRIPTS_ARGS="$SCRIPTS_ARGS,rtsp-url-brute.urlfile='$RTSP_URLS'"
 SCRIPTS_ARGS="$SCRIPTS_ARGS,brute.retries=10240,http-auth.path='/',http-form-brute.path='/',http-brute.path='/'"
-(( ++N ))
-I=1
-while IFS= read -r item2 || [[ -n "$item2" ]] ; do
-	f_echo_progress "$(( I++ ))" "$N"
-	f_deep_scan_host "$item2"
-done < "$DISCOVERED2"
+
+f_iterate_file "$DISCOVERED2" f_deep_scan_host 
+
 echo " "
 [[ "$CLEANUP" = 'true' ]] && rm -rf "$TMP"
 chown -R "$U:$U" "$OUT"
