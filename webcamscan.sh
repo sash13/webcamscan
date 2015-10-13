@@ -99,14 +99,12 @@ STAGE3="$TMP/stage.3.tmp"
 STAGE4="$TMP/stage.4.tmp"
 #
 echo "Первый этап: Поиск..."
-N=$(wc -l < "$1")
-(( ++N ))
-I=1
 rm -f "$DISCOVERED1"
+N=$(( $(wc -l < "$1") + 1 ))
+I=1
 while IFS=$'\n' read -r item1 || [[ -n "$item1" ]] ; do
-	f_echo_progress "$I" "$N"
+	f_echo_progress "$(( I++ ))" "$N"
 	f_scan "$item1" > "$DISCOVERED1"
-	(( ++I ))
 done < "$1"
 echo " "
 cat "$DISCOVERED1" | sort -R - | uniq > "$DISCOVERED2"
@@ -116,7 +114,6 @@ N=$(wc -l < "$DISCOVERED2")
 echo "Найдено $N потенциальных камер."
 #
 echo "Второй этап: Расширенное сканирование..."
-(( ++N ))
 SCRIPTS='rtsp-methods,rtsp-url-brute,http-title'
 if [ "$BRUTEFORCE" = 'true' ] ; then
 	SCRIPTS="$SCRIPTS,http-auth,http-auth-finder,http-brute,http-form-brute,http-default-accounts"
@@ -124,11 +121,11 @@ fi
 SCRIPTS_ARGS="unpwdb.timelimit='$BRUTEFORCE_TIMELIMIT'"
 SCRIPTS_ARGS="$SCRIPTS_ARGS,rtsp-url-brute.urlfile='$RTSP_URLS'"
 SCRIPTS_ARGS="$SCRIPTS_ARGS,brute.retries=10240,http-auth.path='/',http-form-brute.path='/',http-brute.path='/'"
+(( ++N ))
 I=1
 while IFS= read -r item2 || [[ -n "$item2" ]] ; do
-	f_echo_progress "$I" "$N"
+	f_echo_progress "$(( I++ ))" "$N"
 	f_deep_scan_host "$item2"
-	(( ++I ))
 done < "$DISCOVERED2"
 echo " "
 [[ "$CLEANUP" = 'true' ]] && rm -rf "$TMP"
