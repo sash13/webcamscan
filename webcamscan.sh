@@ -29,6 +29,18 @@ RTSPREGEX='rtsp:\/\/[0-9.]\+\/\S*'
 function f_echo_progress () { echo -n " $(bc -l <<< "scale=1; 100.0*($1-0.5)/$2")%" ; }
 function f_echo_subprogress () { echo -n '.' ; }
 #
+# Обход по файлу с прогрессом: $1 - файл, $2... - коллбек
+function f_iterate_file () {
+	local file=$1
+	shift
+	local n=$(( $(wc -l < "$file") + 1 ))
+	local i=0
+	while IFS=$'\n' read -r item || [[ -n "$item" ]] ; do
+		f_echo_progress "$(( i++ ))" "$n"
+		$@ #INVOKE CALLBACK
+	done < "$file"
+}
+#
 # Первичное сканирование целей: $1 - цели, stdout - найденые цели
 function f_scan () {
 	nmap --privileged -n -sS -sU -p T:554,U:554 --open --max-retries 3 --host-timeout 30s \
