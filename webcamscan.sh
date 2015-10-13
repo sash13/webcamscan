@@ -4,7 +4,6 @@ if [[ $EUID -ne 0 ]]; then
    echo "Скрипт должен работать от root."
    exit 1
 fi
-U=$(who am i | awk '{print $1}')
 if [ ! -f "$1" ]; then
 	echo "Файл '$1' не найден!"
 	exit 1
@@ -29,6 +28,12 @@ RTSPREGEX='rtsp:\/\/[0-9.]\+\/\S*'
 function f_echo_progress () { echo -n " $(bc -l <<< "scale=1; 100.0*($1-0.5)/$2")%" ; }
 function f_echo_subprogress () { echo -n '.' ; }
 #
+# Исправляет владельца файла из-за выполенния от root'а: $1 - файл
+function f_fix_own () {
+	local u=$(who am i | awk '{print $1}')
+	chown -R "$u:$u" "$1"
+}
+#
 # Обход по файлу с прогрессом: $1 - файл, $2... - коллбек
 function f_iterate_file () {
 	local file=$1
@@ -50,9 +55,9 @@ function f_scan () {
 #
 # Записывает найденые хосты в выход: $1 - файл с хостами
 function f_write_all_hosts () {
-	local ALL_HOSTS_LIST_FILE="${OUT}/all_hosts.txt"
-	cat "$1" >> "$ALL_HOSTS_LIST_FILE"
-	chown -R "$U:$U" "$ALL_HOSTS_LIST_FILE"
+	local file="${OUT}/all_hosts.txt"
+	cat "$1" >> "$file"
+	f_fix_own "$file"
 }
 #
 # Глубокое сканирование хоста: $1 - хост
@@ -80,7 +85,7 @@ function f_deep_scan_host () {
 				SCREENFILE="${OUT}/${item2}_${M}.jpg"
 				timeout -k 5 15 avconv -i "$item3" -ss 3 -qscale 0 -t 1 -r 1 "$SCREENFILE" > /dev/null 2>&1
 				if [ -f "$SCREENFILE" ] ; then
-					chown "$U:$U" "$SCREENFILE"
+					f_fix_own "$SCREENFILE"
 					echo "Скриншот '$item3' сохранен в '$SCREENFILE'." >> "$STAGE4"
 					echo ' ' >> "$STAGE4"
 				fi
@@ -95,7 +100,7 @@ function f_deep_scan_host () {
 	cat "$STAGE3" >> "${OUT}/all.txt" # ! Дозапись
 	INFOFILE="${OUT}/${item2}${F}_.txt"
 	cat "$STAGE3" >> "$INFOFILE" # ! Дозапись
-	chown "$U:$U" "$INFOFILE"
+	f_fix_own "$INFOFILE"
 }
 #
 OUT="${OUT:-$1-webcam}"
@@ -115,9 +120,8 @@ rm -f "$DISCOVERED1"
 f_iterate_file "$1" f_scan "$DISCOVERED1"
 cat "$DISCOVERED1" | sort -R - | uniq > "$DISCOVERED2"
 [[ "$WRITE_ALL_HOSTS" = 'true' ]] && f_write_all_hosts "$DISCOVERED2"
-
-N=$(wc -l < "$DISCOVERED2")
-echo "Найдено $N потенциальных камер."
+#
+echo "Найдено $(wc -l < "$DISCOVERED2") потенциальных камер."
 #
 echo "Второй этап: Расширенное сканирование..."
 SCRIPTS='rtsp-methods,rtsp-url-brute,http-title'
@@ -132,7 +136,7 @@ f_iterate_file "$DISCOVERED2" f_deep_scan_host
 
 echo " "
 [[ "$CLEANUP" = 'true' ]] && rm -rf "$TMP"
-chown -R "$U:$U" "$OUT"
+f_fix_own "$OUT"
 #
 echo "Готово!"
 exit 0
