@@ -87,13 +87,13 @@ function f_write_all_hosts () {
 #
 # Сохраняет скриншот: $1 - трансляция, $2 - файл.
 function f_libav_probe () {
-	timeout -k 5 15 avprobe -v info "$1" && echo "Не удаётся сделать avprobe '$1'!"
+	timeout -k 5 25 avprobe -v info "$1" && echo "Не удаётся сделать avprobe '$1'!"
 	return 0
 }
 #
 # Сохраняет скриншот: $1 - трансляция, $2 - файл.
 function f_libav_screenshot () {
-	timeout -k 5 15 avconv -v quiet -i "$1" -ss 3 -qscale 0 -t 1 -r 1 "$2"
+	timeout -k 5 25 avconv -v quiet -i "$1" -ss 3 -qscale 0 -t 1 -r 1 "$2"
 	[[ -f "$2" ]] && f_fix_own "$2" \
 		&& echo "Скриншот '$1' сохранен в '$2'." || echo "Не удаётся сделать скриншот '$1'!"
 	return 0
