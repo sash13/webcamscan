@@ -87,7 +87,7 @@ function f_write_all_hosts () {
 #
 # Сохраняет скриншот: $1 - трансляция, $2 - файл.
 function f_libav_probe () {
-	timeout -k 5 15 avprobe -v info "$item3" && echo "Неудаётся сделать avprobe '$1'!"
+	timeout -k 5 15 avprobe -v info "$1" && echo "Не удаётся сделать avprobe '$1'!"
 	return 0
 }
 #
@@ -95,7 +95,7 @@ function f_libav_probe () {
 function f_libav_screenshot () {
 	timeout -k 5 15 avconv -v quiet -i "$1" -ss 3 -qscale 0 -t 1 -r 1 "$2"
 	[[ -f "$2" ]] && f_fix_own "$2" \
-		&& echo "Скриншот '$1' сохранен в '$2'." || echo "Неудаётся сделать скриншот '$1'!"
+		&& echo "Скриншот '$1' сохранен в '$2'." || echo "Не удаётся сделать скриншот '$1'!"
 	return 0
 }
 #
@@ -123,7 +123,7 @@ function f_deep_scan_host () {
 				break
 			fi
 			f_echo_subprogress
-			f_libav_probe >> "$STAGE4" 2>&1
+			f_libav_probe "$item3" >> "$STAGE4" 2>&1
 			[[ "$LIBAV_SCREENSHOT" = 'true' ]] \
 				&& f_libav_screenshot "$item3" "${OUT}/${1}_${M}.jpg" >> "$STAGE4" 2>&1
 		done
