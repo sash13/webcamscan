@@ -12,7 +12,7 @@ HOST_TIMELIMIT="${HOST_TIMELIMIT:-5m}"
 RTSP_URLS="${RTSP_URLS:-./rtsp-urls.txt}"
 FIND_AUTH="${FIND_AUTH:-true}"
 BRUTEFORCE="${BRUTEFORCE:-true}"
-BRUTEFORCE_TIMELIMIT="${BRUTEFORCE_TIMELIMIT:-1m}"
+BRUTEFORCE_TIMELIMIT="${BRUTEFORCE_TIMELIMIT:-2m}"
 LIBAV_LIMIT="${LIBAV_LIMIT:-4}"
 LIBAV_SCREENSHOT="${LIBAV_SCREENSHOT:-true}"
 CLEANUP="${CLEANUP:-true}"
@@ -67,9 +67,11 @@ function f_iterate_file () {
 # Первичное сканирование целей: $1 - куда сохранять, $2 - цели 
 function f_scan () {
 	#echo "$2"
-	nmap --privileged -n -sS -sU -p T:554,U:554 --open --max-retries 3 --host-timeout 30s \
+	nmap --privileged -n -sS -sU -p T:554,U:554 --open --max-retries 3 --host-timeout 10s \
 		--randomize-hosts --min-parallelism=4 --min-hostgroup=4096 --max-hostgroup=65536 \
 		-oG - $(printf "%q" "$2" ) 2>&1 | grep 'open/' | grep -Eo "$REGEX_IP" | uniq >> "$1"
+		#     ^ этот костыль нужен, потому что nmap не принимает список хостов
+		#       как один аргумент, но переменные нужно как-то экранировать.
 	return 0
 }
 #
@@ -103,10 +105,14 @@ function f_deep_scan_host () {
 		--script "$SCRIPTS" --script-args "$SCRIPTS_ARGS" \
 		--host-timeout "$HOST_TIMELIMIT" "$1" > "$STAGE3" 2>&1
 	local f=''
+	grep -q 'Skipping host [0-9.]+ due to host timeout' "$STAGE3" && f="${f}_timeout" # Флаг: Ошибка
+	grep -qE '[0-9]+/tcp\s+open\s+https?' "$STAGE3" && f="${f}_http" # Флаг: Есть рабочая HTTP-служба
 	grep -q 'Valid credentials' "$STAGE3" && f="${f}_creds" # Флаг: Найден логин-пароль
 	grep -q 'No valid accounts found' "$STAGE3" && f="${f}_nocreds" # Флаг: Не найден логин-пароль
+	grep -qz 'rtsp-methods:.*DESCRIBE' "$STAGE3" && f="${f}_rtsp" # Флаг: Есть рабочая  RTSP-служба
+	grep -q 'An error occured while testing the following URLs' "$STAGE3" && f="${f}_error" # Флаг: Ошибка
 	if grep -q 'Discovered URLs' "$STAGE3" ; then
-		f="${f}_rtsp" # Флаг: Есть рабочие стримы
+		f="${f}_found" # Флаг: Есть рабочие стримы
 		echo >> "$STAGE4"
 		local m=0
 		for item3 in `grep -Eo "$REGEX_URL_RSTP" "$STAGE3"` ; do
@@ -116,11 +122,12 @@ function f_deep_scan_host () {
 			fi
 			f_echo_subprogress
 			f_libav_probe >> "$STAGE4" 2>&1
-			[[ "$LIBAV_SCREENSHOT" = 'true' ]] && f_libav_screenshot "$item3" "${OUT}/${1}_${M}.jpg" >> "$STAGE4" 2>&1
+			[[ "$LIBAV_SCREENSHOT" = 'true' ]] \
+				&& f_libav_screenshot "$item3" "${OUT}/${1}_${M}.jpg" >> "$STAGE4" 2>&1
 		done
 		grep -q 'Stream #[.0-9]*: Video' "$STAGE4" && f="${f}_video" # Флаг: Есть видео
 		grep -q 'Stream #[.0-9]*: Audio' "$STAGE4" && f="${f}_audio" # Флаг: Есть звук
-		grep -q 'Interleaved RTP mode is not supported yet' "$STAGE4" && f="${f}_tcp" # Флаг: TCP
+		grep -q 'Interleaved RTP mode is not supported yet' "$STAGE4" && f="${f}_il" # Флаг: TCP
 		cat "$STAGE4" >> "$STAGE3"
 	fi
 	cat "$STAGE3" >> "${OUT}/all.txt" # ! Дозапись
