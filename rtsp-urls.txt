@@ -84,7 +84,9 @@
 /h264_2
 /h264_3
 /h264_4
-#!comment: j2000ip
+#!comment: j2000ip, RVi
+/snl/live/0/1/
+/snl/live/0/2/
 /snl/live/1/1/
 /snl/live/1/2/
 /snl/live/2/1/
@@ -93,3 +95,10 @@
 /snl/live/3/2/
 /snl/live/4/1/
 /snl/live/4/2/
+#!comment: RVi
+/cam/realmonitor?channel=0&subtype=0
+/cam/realmonitor?channel=0&subtype=1
+/cam/realmonitor?channel=1&subtype=0
+/cam/realmonitor?channel=1&subtype=1
+/cam/realmonitor?channel=2&subtype=0
+/cam/realmonitor?channel=2&subtype=1
