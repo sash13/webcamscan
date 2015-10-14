@@ -22,4 +22,6 @@
 
 #LIBAV_SCREENSHOT=true
 
+#SAVE_NO_FLAGS=false
+
 #CLEANUP=true

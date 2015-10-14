@@ -15,6 +15,7 @@ BRUTEFORCE="${BRUTEFORCE:-true}"
 BRUTEFORCE_TIMELIMIT="${BRUTEFORCE_TIMELIMIT:-2m}"
 LIBAV_LIMIT="${LIBAV_LIMIT:-4}"
 LIBAV_SCREENSHOT="${LIBAV_SCREENSHOT:-true}"
+SAVE_NO_FLAGS="${SAVE_NO_FLAGS:-false}"
 CLEANUP="${CLEANUP:-true}"
 #
 # 'Константные' регексы
@@ -23,6 +24,7 @@ REGEX_URL_RSTP='rtsp://[0-9.]+/\S*'
 #
 # Рабочие переменные окружения
 OUT="${OUT:-$1-webcam}"
+OUT_ALL="${OUT}/all.txt"
 mkdir -p "$OUT"
 TMP="${TMP:-$OUT/tmp}"
 mkdir -p "$TMP"
@@ -130,10 +132,15 @@ function f_deep_scan_host () {
 		grep -q 'Interleaved RTP mode is not supported yet' "$STAGE4" && f="${f}_il" # Флаг: TCP
 		cat "$STAGE4" >> "$STAGE3"
 	fi
-	cat "$STAGE3" >> "${OUT}/all.txt" # ! Дозапись
-	local infofile="${OUT}/${1}${f}_.txt"
-	cat "$STAGE3" >> "$infofile" # ! Дозапись
-	f_fix_own "$infofile"
+	if [[ -n "$f" ]] || [[ "$SAVE_NO_FLAGS" = 'true' ]] ; then
+		cat "$STAGE3" >> "$OUT_ALL" # ! Дозапись
+		local infofile="${OUT}/${1}${f}_.txt"
+		cat "$STAGE3" >> "$infofile" # ! Дозапись
+		f_fix_own "$infofile"
+	else
+		echo >> "$OUT_ALL" # ! Дозапись
+		echo "Пропуск '$1': Нет тегов." >> "$OUT_ALL" # ! Дозапись
+	fi
 }
 #
 # ОСНОВНОЙ КОД
