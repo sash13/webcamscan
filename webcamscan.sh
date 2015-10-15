@@ -116,16 +116,16 @@ function f_deep_scan_host () {
 	if grep -q 'Discovered URLs' "$STAGE3" ; then
 		f="${f}_found" # Флаг: Есть рабочие стримы
 		echo >> "$STAGE4"
-		local m=0
+		local i=0
 		for item3 in `grep -Eo "$REGEX_URL_RSTP" "$STAGE3"` ; do
-			if [ "$(( M++ ))" -ge "$LIBAV_LIMIT" ] ; then
+			if [ "$(( i++ ))" -ge "$LIBAV_LIMIT" ] ; then
 				echo "Достигнут LIBAV_LIMIT ($LIBAV_LIMIT)!" >> "$STAGE4"
 				break
 			fi
 			f_echo_subprogress
 			f_libav_probe "$item3" >> "$STAGE4" 2>&1
 			[[ "$LIBAV_SCREENSHOT" = 'true' ]] \
-				&& f_libav_screenshot "$item3" "${OUT}/${1}_${M}.jpg" >> "$STAGE4" 2>&1
+				&& f_libav_screenshot "$item3" "${OUT}/${1}_${i}.jpg" >> "$STAGE4" 2>&1
 		done
 		grep -q 'Stream #[.0-9]*: Video' "$STAGE4" && f="${f}_video" # Флаг: Есть видео
 		grep -q 'Stream #[.0-9]*: Audio' "$STAGE4" && f="${f}_audio" # Флаг: Есть звук
