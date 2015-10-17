@@ -7,10 +7,10 @@ wcs_check_root
 #         1      1   2              23 4      43 5  5
 PCRE_URL='([a-z]+)://([a-z0-9.-]+)(:([0-9]+))?(.*)'
 
-rproto=$(echo "$1" | pcregrep -o1 -i "$PCRE_URL")
-rhost=$(echo "$1" | pcregrep -o2 -i "$PCRE_URL")
-rport=$(echo "$1" | pcregrep -o4 -i "$PCRE_URL")
-rpath=$(echo "$1" | pcregrep -o5 -i "$PCRE_URL")
+rproto=$(wcs_println "$1" | pcregrep -o1 -i "$PCRE_URL")
+rhost=$(wcs_println "$1" | pcregrep -o2 -i "$PCRE_URL")
+rport=$(wcs_println "$1" | pcregrep -o4 -i "$PCRE_URL")
+rpath=$(wcs_println "$1" | pcregrep -o5 -i "$PCRE_URL")
 
 # Пути по умолчанию
 [[ -z "$rpath" ]] && rpath='/'
@@ -22,7 +22,7 @@ elif [[ "$rproto" =~ ftp ]]; then
 	scripts='ftp-brute'
 	scripts_args='ftp-brute.timeout=10h'
 else
-	echo "Протокол '$rproto' не поддерживается."
+	wcs_println "Протокол '$rproto' не поддерживается."
 	exit 1
 fi
 scripts_args="$scripts_args,brute.timeout=10h,brute.retries=1000000,unpwdb.timelimit=10h"
@@ -38,6 +38,6 @@ if [[ -z "$rport" ]]; then
 	fi
 fi
 
-echo "Запуск сканирования [$rproto]://[$rhost]:[$rport][$rpath]..."
+wcs_println "Запуск сканирования [$rproto]://[$rhost]:[$rport][$rpath]..."
 nmap -vvv --privileged -T4 -n -PN -sS -p "$rport" --reason \
 	--script-args "$scripts_args" --script "$scripts" --host-timeout 10h "$rhost"
