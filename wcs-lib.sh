@@ -98,9 +98,11 @@ function f_iterate_file () {
 
 # Первичное сканирование целей: $1 - куда сохранять, $2 - цели 
 function f_scan () {
+	local out="$1"
+	[[ -z "$out" || "$out" == '-' ]] && out='/dev/stdout'
 	nmap --privileged -n -sS -sU -p T:554,U:554 --open --max-retries 3 --host-timeout 10s \
 		--randomize-hosts --min-parallelism=4 --min-hostgroup=4096 --max-hostgroup=65536 \
-		-oG - $(printf "%q" "$2" ) 2>&1 | grep 'open/' | grep -Eo "$REGEX_IP" | uniq >> "$1"
+		-oG - $(printf "%q" "$2" ) 2>&1 | grep 'open/' | grep -Eo "$REGEX_IP" | uniq >> "$out"
 		#     ^ этот костыль нужен, потому что nmap не принимает список хостов
 		#       как один аргумент, но переменные нужно как-то экранировать.
 	return 0
@@ -208,7 +210,7 @@ function f_deep_scan_host () {
 		echo >> "$nmap_tmp" # Разделительная пустая строка.
 		cat "$libav_tmp" >> "$nmap_tmp"
 
-		[[ "$CLEANUP" = 'true' ]] && rm -f "$libav_tmp"
+		f_clean "$libav_tmp"
 	fi
 
 	if [[ -n "$f" || "$SAVE_NO_FLAGS" = 'true' ]]
@@ -223,11 +225,16 @@ function f_deep_scan_host () {
 		echo >> "$OUT_ALL" # ! Дозапись
 	fi
 
-	[[ "$CLEANUP" = 'true' ]] && rm -f "$nmap_tmp"
+	f_clean "$nmap_tmp"
+}
+
+
+function f_clean () {
+	[[ "$CLEANUP" = 'true' && -e "$1" ]] && rm -rf "$1"
 }
 
 
 function f_cleanup () {
-	[[ "$CLEANUP" = 'true' && -n "$TMP" ]] && rm -rf "$TMP"
+	f_clean "$TMP"
 	[[ -n "$OUT" ]] && f_fix_own "$OUT"
 }

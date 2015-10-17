@@ -7,3 +7,6 @@ f_check_file "$1"
 
 echo "Расширенное сканирование..."
 f_iterate_file "$1" f_deep_scan_host
+
+echo "Готово!"
+exit 0
