@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Webcamscan by voaoom</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Webcamscan</h1>
+        <h2>web camera scaner</h2>
+        <a href="https://github.com/voaoom/webcamscan" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a id="webcamscan" class="anchor" href="#webcamscan" aria-hidden="true"><span class="octicon octicon-link"></span></a>webcamscan</h1>
+
+<p>Скрипт для полу-автоматического поиска веб-камер в сети, умеющий искать RTSP-трансляции и делать их срины, умеющий подбирать логин-пароли для вэб-панелей, умеющий сортировать результаты и ставить тэги.
+Получается примерно так:
+<img src="http://i.imgur.com/dMNDljm.png" alt="Пример результата"></p>
+
+<hr>
+
+<p><img class="emoji" title=":bangbang:" alt=":bangbang:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/203c.png" height="20" width="20" align="absmiddle"> <strong>ВНИМАНИЕ: Скрипт предназначен только для ознакомительных и учебных целей. Использование его может быть <em>противозаконным</em>. Используйте его на свой страх и риск с согласия всех участников.</strong></p>
+
+<hr>
+
+<h3>
+<a id="Зависимости-скрипта" class="anchor" href="#%D0%97%D0%B0%D0%B2%D0%B8%D1%81%D0%B8%D0%BC%D0%BE%D1%81%D1%82%D0%B8-%D1%81%D0%BA%D1%80%D0%B8%D0%BF%D1%82%D0%B0" aria-hidden="true"><span class="octicon octicon-link"></span></a>Зависимости скрипта:</h3>
+
+<p>Обязательно:</p>
+
+<ul>
+<li>
+<del>ЖМУ/Пинус</del> GNU/Linux. Может быть и OSX, но я не пробовал.</li>
+<li>
+<code>bash</code>, ну или какой-нибудь еще шелл.</li>
+<li>Команда <code>timeout</code>, сейчас она есть везде, но вдруг вы — аутист?</li>
+<li>
+<code>nmap-nse</code> — NMap с поддержкой скриптов (NSE).</li>
+<li>
+<code>libav</code> (<code>avprobe</code>, <code>avconv</code>) — Для анализа трансляций и скриншотов.</li>
+</ul>
+
+<p>Не обязательно:</p>
+
+<ul>
+<li>
+<code>git</code>, что бы склонировать реп.</li>
+<li>TODO: <code>ffmpeg</code> (<code>ffprobe</code>) как альтернатива <code>libav</code>.</li>
+</ul>
+
+<h3>
+<a id="Запуск-скрипта" class="anchor" href="#%D0%97%D0%B0%D0%BF%D1%83%D1%81%D0%BA-%D1%81%D0%BA%D1%80%D0%B8%D0%BF%D1%82%D0%B0" aria-hidden="true"><span class="octicon octicon-link"></span></a>Запуск скрипта:</h3>
+
+<ul>
+<li><code>git clone https://github.com/voaoom/webcamscan.git</code></li>
+<li><code>cd webcamscan</code></li>
+<li><code>chmod +x ./webcamscan.sh</code></li>
+<li>Вы можете поднастроить скрипт по своему вкусу, раскомментировав и поправив в строки в файле <code>./config.sh</code>. См. ниже.</li>
+<li>Скрипт работает под правами суперпользователя. Это необходимо для эффективной работы <code>nmap</code>. Где гарантии, что он не сделает <code>rm -rf /</code>? Их нет, мне похуй.</li>
+<li>Скрипт принимает на вход файл с подсетями-целми: <code>sudo ./webcamscan.sh &lt;путь/к/списку/адресов.txt&gt;</code>. Список адресов содержит либо конкретные хосты и адреса, либо подсети, разделенные любыми проблеьными символами.</li>
+</ul>
+
+<h3>
+<a id="Настройки-скрипта" class="anchor" href="#%D0%9D%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B8-%D1%81%D0%BA%D1%80%D0%B8%D0%BF%D1%82%D0%B0" aria-hidden="true"><span class="octicon octicon-link"></span></a>Настройки скрипта</h3>
+
+<p>Вы можете поднастроить скрипт по своему вкусу, раскомментировав и поправив в строки в файле <code>./config.sh</code>. Будте осторожны: я не делал защиту от дебилов. Неправильные значения могут поломать скрипт и снести вашу систему. <strong>Почитайте ниже, как скрипт работает</strong>, что бы понимать, что  происходит.
+Параметры:</p>
+
+<ul>
+<li>
+<code>ПАРАМЕТР=значение-по-умолчанию</code> — описание. Булевые значения должны быть <code>true</code> или <code>false</code>.</li>
+<li>
+<code>NMAPDIR=.</code> — используется для указания <code>nmap</code>, где он работает.</li>
+<li>
+<code>WRITE_ALL_HOSTS=true</code> — записывать все обнаруженные адреса в файл all_hosts.txt или нет.</li>
+<li>
+<code>HOST_TIMELIMIT=5m</code> — cуммарное максимальное время затрачиваемое на один хост. Суффикс <code>m</code> означает минуты, еще можно <code>s</code> и <code>h</code> — секунды и часы. Не стоит выставлять большие значения. Скрипт не работает параллельно, так что во время тупления над одним хостом другие хосты не сканируются.</li>
+<li>
+<code>RTSP_URLS='./rtsp-urls.txt'</code> — Файл с возможными URL-ами RTSP, используется для перебора. Буду очень рад, если вы поможете мне его пополнить. За основу взят стандартный файл из <code>nmap</code>.</li>
+<li>
+<code>FIND_AUTH=true</code> — искать на хосте страницы с авторизацией или нет.</li>
+<li>
+<code>BRUTEFORCE=true</code> — делать ли перебор логин-паролей для вэб-панели, если это возможно или нет.</li>
+<li>
+<code>BRUTEFORCE_TIMELIMIT=2m</code> — максимальное время перебора логин-паролей на одном хосте. Здесь всё тоже, что и <code>HOST_TIMELIMIT</code>. Этого мало для серьёзного перебора, но находит всякие дурацкие пароли.</li>
+<li>
+<code>LIBAV_LIMIT=4</code> — Ограничение на анализ трансляций (из всех обнаруженных на одной камере). Это важное ограничение, ибо некоторые можели вэб-камер начисто игнорят URL-ы, и транслируют всегда. В таком случае <code>nmap</code> найдет чуть более, чем дохуя трансляций, но на самом деле это всё будет одна и таже. Да и вообще у многих камер есть параллельные трансляции. Что бы не тратить время на анализ потоков и нарезане скриншотов, нужно это ограничение.</li>
+<li>
+<code>LIBAV_SCREENSHOT=true</code> — пытаться делать скриншоты или нет.</li>
+<li>
+<code>SAVE_NO_FLAGS=false</code> — сохранять информацию о хостах, у которых нет тегов или нет.</li>
+<li>
+<code>CLEANUP=true</code> — удалять за собой временные файлы или нет.</li>
+</ul>
+
+<h3>
+<a id="Работа-скрипта" class="anchor" href="#%D0%A0%D0%B0%D0%B1%D0%BE%D1%82%D0%B0-%D1%81%D0%BA%D1%80%D0%B8%D0%BF%D1%82%D0%B0" aria-hidden="true"><span class="octicon octicon-link"></span></a>Работа скрипта:</h3>
+
+<ul>
+<li>
+<img class="emoji" title=":one:" alt=":one:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/0031-20e3.png" height="20" width="20" align="absmiddle"> <strong>Первый этап</strong>: Скрипт, используя <code>nmap</code>, полностью сканирует все эти сети на предмет открытого RTSP-порта — это с 95% вероятностью вэб-камера (1% — медиасервер, 4% — что-нибудь еще). Все обнаруженные хосты сохраняются.
+
+<ul>
+<li>Примечание: Этот этап может выполняться долго и тихо, так что я добавил сюда прогресс. Прогресс отчитывается по строкам входного файла. Каждая строка по очереди загоняется в <code>nmap</code>, так что если всё будет записано в одну строку, то прогресса не будет, а если каждый адрес на своей строке, то на каждый адрес каждый раз будет завново запускаться <code>nmap</code>. Таким образом, первый случай быстрый, но не наглядный, а второй наглядный, но медленный.</li>
+</ul>
+</li>
+<li>
+<img class="emoji" title=":two:" alt=":two:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/0032-20e3.png" height="20" width="20" align="absmiddle"> <strong>Второй этап</strong>: Скрипт, используя <code>nmap</code>, подробно сканирует найденые хосты. На этом этапе, в звисимости от настроек, происходит:
+
+<ul>
+<li>Быстрый <strong>перебор логин-паролей</strong> на HTTP-панели, если такая панель обнаружена, что бы найти пары типа <code>admin:admin</code> и <code>root:123456</code>.</li>
+<li>Поиск других страниц авторизации, если они существуют, но они <strong>пока</strong> не перебираются. Перебираются только те, что находятся в <code>/</code> HTTP-службы.</li>
+<li>Быстрый <strong>перебор известных RTSP-URL-ов</strong>, что бы найти все возможные трансляции, но нет гарантий, что скрипт точно обнаружит их. Если он не нашел ниодной трансляции, но RTSP-сервер выглядит рабочим, то, скорее всего, там используются более хитрые URL-ы и/или авторизация. Попробуйте порыться в вэб-панели, может найдете информацию. Если ничего не получилось, то этот хост можно прогнорировать или до-взламывать вручную.</li>
+<li>Найденые RTSP-URL-ы передаются в <code>avprobe</code> для изучения трансляции, а также создаются их скриншоты с помощью <code>avconv</code>. Иногда сервера ебут мозги отправляя пустые пакеты или какой-нибудь мусор, из-за чего эти две программы начинают тупить и это может растянуться на часы. На них выставлено ограничение в несколько десятков секунд, так что есть вероятность, что они не выдадут результат.</li>
+<li>Выхлоп программ парсится, на основе чего для каждого хоста <strong>выставляются тэги</strong>:
+
+<ul>
+<li>
+<code>http</code> — если была обнаружена хотя бы одна работающая HTTP-служба. От этого тэга зависят:
+
+<ul>
+<li>
+<code>creds</code> — если был обнаружен какой-то метод авторизации, был проведен перебор и он оказался успешным — учётные данные <strong>найдены</strong>.</li>
+<li>
+<code>nocreds</code> — если был обнаружен какой-то метод авторизации, был проведен перебор и он оказался проавльным — учётные данные <strong>не найдены</strong>.</li>
+</ul>
+</li>
+<li>
+<code>rtsp</code> — если была обнаружена хотя бы одна RTSP-служба. От этого тэга зависят:
+
+<ul>
+<li>
+<code>found</code> — если найден хотя бы один корректный URL трансляции (но не гарантируется, что в трансляции корректные данные). </li>
+<li>
+<code>video</code> — если найдена хотя бы одна трансляция, содержащая <strong>видео</strong>-поток (но не гарантируется, что в этом потоке адекватные данные).</li>
+<li>
+<code>audio</code> — если найдена хотя бы одна трансляция, содержащая <strong>аудио</strong>-поток (но не гарантируется, что в этом потоке адекватные данные).</li>
+<li>
+<code>il</code> — почему-то <code>libav</code> не всегда дружит с Interleaved (TCP) RTSP. Если найдена хотя бы одна такая трансляция, то выставляется этот тэг. Это <strong>не</strong> означает, что трансляция не работает. Она, вероятно, будет открываться с ошибками в плеерах на основе <code>libav</code>, но может корректно работать в других, например <code>vlc</code>.</li>
+</ul>
+</li>
+<li>
+<code>error</code> — какая-то ошибка, из-за которой невозможно утверждать о корректности <strong>отрицательных</strong> результатов. Регистрируется в следующих случаях:
+
+<ul>
+<li>Скрипт <code>rtsp-url-brute</code> в <code>nmap</code> выкинул ошибку. Как правило, возникает, если нарушается протокол. Возможно, RTPS-служба, на самом деле не RTPS или просто она кривая и багнутая.</li>
+</ul>
+</li>
+<li>Если ниодин тэг не был проставлен, значит этот хост по-видимому не представляет интереса. Таких хостов может быть очень много.</li>
+<li>Если зависимость тэгов нарушена, то отпишите мне. Не то что бы это был баг или типа того, <del>бака</del>, возможно, этот новый неисследованый случай.</li>
+</ul>
+</li>
+<li>Результаты сохраняются:
+
+<ul>
+<li>В файлы вида <code>&lt;папка-выхлопа&gt;/&lt;адрес-хоста&gt;_[тэг_[...]].txt</code> — отчёт <code>nmap</code> и отчёты <code>avprobe</code>.</li>
+<li>В файлы вида <code>&lt;папка-выхлопа&gt;/&lt;адрес-хоста&gt;_&lt;порядковый-номер-трансляции&gt;.jpg</code> — скриншот, сделаный <code>avconv</code>.</li>
+<li>В файл <code>all_hosts.txt</code> — список всех адресов, которые сканировались на втором этапе.</li>
+<li>В файл <code>all.txt</code> — все отчёты <code>nmap</code> и <code>avprobe</code> в хронологическом порядке.</li>
+<li>По умолчанию <code>&lt;пака-выхлопа&gt;/</code> это <code>&lt;путь-входного-файла&gt;-webcam/</code>.</li>
+<li>Если файлы уже существуют, то будет выполнена дозапись в их конец.</li>
+<li>Сохранение происходит во время второго этапа, так что эти файлы будут появляться по мере обработки хостов.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+<h3>
+<a id="История-версий" class="anchor" href="#%D0%98%D1%81%D1%82%D0%BE%D1%80%D0%B8%D1%8F-%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D0%B9" aria-hidden="true"><span class="octicon octicon-link"></span></a>История версий:</h3>
+
+<p>( <a href="https://github.com/voaoom/webcamscan/releases">https://github.com/voaoom/webcamscan/releases</a> )</p>
+
+<p><strong>v2</strong> ~ 2015-10-14</p>
+
+<ul>
+<li>Переписано на функциях, более структурированный и оптимизированный код.</li>
+<li>Изменения тегов:
+
+<ul>
+<li>
+<code>tcp</code> переименован в <code>il</code>.</li>
+<li>
+<code>rtsp</code> переименован в <code>found</code>.</li>
+<li>Добавлен (другой) <code>rtsp</code>.</li>
+</ul>
+</li>
+<li>Добавлен параметр <code>SAVE_NO_FLAGS</code>.</li>
+<li>Параметр <code>BRUTEFORCE_TIMELIMIT</code> по умолчанию изменен с <code>1m</code> до <code>2m</code> + внутринние изменения о таймаутах.</li>
+<li>Добавлены записи в <code>rtsp-urls.txt</code> для видеорегистораторов RVi.</li>
+</ul>
+
+<p><strong>v1</strong> ~ 2015-10-13</p>
+
+<ul>
+<li>Первый релиз.</li>
+</ul>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/voaoom/webcamscan/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/voaoom/webcamscan/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/voaoom/webcamscan"></a> is maintained by <a href="https://github.com/voaoom">voaoom</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
