@@ -2,16 +2,16 @@
 
 . "$(dirname $0)/wcs-lib.sh"
 
-f_check_nmap
-f_check_root
-f_check_file "$1"
+wcs_check_nmap
+wcs_check_root
+wcs_check_file "$1"
 
 echo "Поиск..."
-f_iterate_file "$1" f_scan - | sort -R - | uniq > "$2"
-f_fix_own "$2"
+wcs_iterate_file "$1" wcs_scan - | sort -R - | uniq > "$2"
+wcs_fix_own "$2"
 
-f_clean "$t1"
-f_cleanup
+wcs_clean "$t1"
+wcs_cleanup
 
 echo "Готово!"
 exit 0

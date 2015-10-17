@@ -1,8 +1,8 @@
 #!/bin/bash
 . "$(dirname $0)/wcs-lib.sh"
 
-f_check_pcregrep
-f_check_root
+wcs_check_pcregrep
+wcs_check_root
 
 #         1      1   2              23 4      43 5  5
 PCRE_URL='([a-z]+)://([a-z0-9.-]+)(:([0-9]+))?(.*)'
