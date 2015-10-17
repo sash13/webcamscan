@@ -1,5 +1,5 @@
 #!/bin/bash
-. "$(dirname $0)/wcs-lib.sh"
+. "$(dirname "$0")/wcs-lib.sh"
 
 wcs_check_pcregrep
 wcs_check_root

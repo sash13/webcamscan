@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Загружаем настройки
-. "$(dirname $0)/config.sh"
+. "$(dirname "$0")/config.sh"
 NMAPDIR="${NMAPDIR:-.}"
 WRITE_ALL_HOSTS="${WRITE_ALL_HOSTS:-true}"
 HOST_TIMELIMIT="${HOST_TIMELIMIT:-5m}"
@@ -41,6 +41,11 @@ function wcs_echo_subprogress () {
 	echo -n '.'
 }
 
+
+function wcs_check_bash () {
+	(( ${BASH_VERSION%%[^0-9]*} < 4 )) \
+		&& echo "Вы используете устревший ($BASH_VERSION) bash, не обходима версия не ниже 4." && exit 1
+}
 
 function wcs_check_root () {
 	[[ $EUID -ne 0 ]] \
@@ -146,7 +151,7 @@ function wcs_deep_scan_host () {
 	# 81,8008,8081 - Beward MJPG
 	nmap -vvv --privileged -T4 -n -PN -sS -sU -p T:80,T:81,T:8008,T:8080,T:8081,T:554,U:554 --reason \
 		--script "$SCRIPTS" --script-args "$SCRIPTS_ARGS" \
-		--host-timeout "$HOST_TIMELIMIT" "$1" > "$nmap_tmp" 2>&1
+		--host-timeout "$HOST_TIMELIMIT" "$1" &> "$nmap_tmp"
 
 	# Флаг: Ошибка
 	grep -q 'Skipping host [0-9.]+ due to host timeout' "$nmap_tmp" \
@@ -180,7 +185,8 @@ function wcs_deep_scan_host () {
 		local libav_tmp=$(wcs_alloc_temp)
 
 		local i=0
-		for item3 in `grep -Eo "$REGEX_URL_RSTP" "$nmap_tmp"`
+		grep -Eo "$REGEX_URL_RSTP" "$nmap_tmp" | \
+		while IFS=$'\n' read -r item3 || [[ -n "$item3" ]]
 		do
 			if [ "$(( i++ ))" -ge "$LIBAV_LIMIT" ]
 			then
@@ -189,9 +195,9 @@ function wcs_deep_scan_host () {
 			fi
 
 			wcs_echo_subprogress
-			wcs_libav_probe "$item3" >> "$libav_tmp" 2>&1
+			wcs_libav_probe "$item3" &>> "$libav_tmp"
 			[[ "$LIBAV_SCREENSHOT" = 'true' ]] \
-				&& wcs_libav_screenshot "$item3" "${OUT}/${1}_${i}.jpg" >> "$libav_tmp" 2>&1
+				&& wcs_libav_screenshot "$item3" "${OUT}/${1}_${i}.jpg" &>> "$libav_tmp"
 
 		done
 
@@ -220,9 +226,7 @@ function wcs_deep_scan_host () {
 		cat "$nmap_tmp" >> "$infofile" # ! Дозапись
 		wcs_fix_own "$infofile"
 	else
-		echo >> "$OUT_ALL" # ! Дозапись
-		echo "Пропуск '$1': Нет тегов." >> "$OUT_ALL" # ! Дозапись
-		echo >> "$OUT_ALL" # ! Дозапись
+		echo -e "\nПропуск '$1': Нет тегов.\n" >> "$OUT_ALL" # ! Дозапись
 	fi
 
 	wcs_clean "$nmap_tmp"

@@ -1,5 +1,5 @@
 #!/bin/bash
-. "$(dirname $0)/wcs-lib.sh"
+. "$(dirname "$0")/wcs-lib.sh"
 
 wcs_check_nmap
 wcs_check_root
