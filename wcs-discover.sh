@@ -1,5 +1,4 @@
 #!/bin/bash
-
 . "$(dirname "$0")/wcs-lib.sh"
 
 wcs_check_nmap

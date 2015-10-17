@@ -24,7 +24,7 @@ OUT_ALL="${OUT}/all.txt"
 mkdir -p "$OUT"
 TMP="${TMP:-$OUT/tmp}"
 mkdir -p "$TMP"
-#
+
 SCRIPTS='rtsp-methods,rtsp-url-brute,http-title'
 [[ "$FIND_AUTH" = 'true' ]] && SCRIPTS="$SCRIPTS,http-auth,http-auth-finder"
 [[ "$BRUTEFORCE" = 'true' ]] && SCRIPTS="$SCRIPTS,http-brute,http-form-brute"
@@ -33,41 +33,60 @@ SCRIPTS_ARGS="$SCRIPTS_ARGS,rtsp-url-brute.urlfile='$RTSP_URLS',brute.retries=10
 SCRIPTS_ARGS="$SCRIPTS_ARGS,http-auth.path='/',http-form-brute.path='/',http-brute.path='/'"
 
 
+function wcs_print () {
+	printf '%s' "$@" 1>&2
+	return 0
+}
+
+function wcs_println () {
+	printf '%s\n' "$@" 1>&2
+	return 0
+}
+
+function wcs_printb () {
+	printf '%b' "$@" 1>&2
+	return 0
+}
+
+function wcs_error () {
+	printf '%b' "$@" 1>&2
+	exit 1
+}
+
+
 # Прогресс: $1 - позиция, $2 - максимум.
 function wcs_echo_progress () {
-	echo -n " $(bc -l <<< "scale=1; 100.0*($1-0.5)/$2")%"
+	wcs_print " $(bc -l <<< "scale=1; 100.0*($1-0.5)/$2")%"
 }
+
 function wcs_echo_subprogress () {
-	echo -n '.'
+	wcs_print '.'
 }
 
 
 function wcs_check_bash () {
 	(( ${BASH_VERSION%%[^0-9]*} < 4 )) \
-		&& echo "Вы используете устревший ($BASH_VERSION) bash, не обходима версия не ниже 4." && exit 1
+		&& wcs_error "Вы используете устревший ($BASH_VERSION) bash, не обходима версия не ниже 4."
 }
 
 function wcs_check_root () {
 	[[ $EUID -ne 0 ]] \
-		&& echo "Скрипт должен работать от root." && exit 1
+		&& wcs_error "Скрипт должен работать от root."
 }
-
 
 function wcs_check_pcregrep () {
 	pcregrep --version &> /dev/null \
-		|| echo "pcregrep не обнаружен." && exit 1
+		|| wcs_error "pcregrep не обнаружен."
 }
-
 
 function wcs_check_nmap () {
 	nmap --version &> /dev/null \
-		|| echo "nmap не обнаружен." && exit 1
+		|| wcs_error "nmap не обнаружен."
 }
-
 
 function wcs_check_file () {
 	[[ ! -f "$1" ]] \
-		&& echo "Файл '$1' не найден!" && exit 1
+		&& wcs_error "Файл '$1' не найден!"
 }
 
 
@@ -87,7 +106,7 @@ function wcs_fix_own () {
 
 # Обход по файлу с прогрессом: $1 - файл, $2... - коллбек
 function wcs_iterate_file () {
-	local file=$1
+	local file="$1"
 	shift
 	local n=$(( $(wc -l < "$file") + 1 ))
 	local i=1
@@ -96,7 +115,7 @@ function wcs_iterate_file () {
 		wcs_echo_progress "$(( i++ ))" "$n"
 		$@ "$item" #INVOKE CALLBACK
 	done < "$file"
-	echo # NL после прогресса
+	wcs_println # NL после прогресса
 	return 0
 }
 
@@ -128,7 +147,7 @@ function wcs_write_all_hosts () {
 
 # Сохраняет скриншот: $1 - трансляция, $2 - файл.
 function wcs_libav_probe () {
-	timeout -k 5 25 avprobe -v info "$1" && echo "Не удаётся сделать avprobe '$1'!"
+	timeout -k 5 25 avprobe -v info "$1" && wcs_println "Не удаётся сделать avprobe '$1'!"
 	return 0
 }
 
@@ -137,7 +156,7 @@ function wcs_libav_probe () {
 function wcs_libav_screenshot () {
 	timeout -k 5 25 avconv -v quiet -i "$1" -ss 3 -qscale 0 -t 1 -r 1 "$2"
 	[[ -f "$2" ]] && wcs_fix_own "$2" \
-		&& echo "Скриншот '$1' сохранен в '$2'." || echo "Не удаётся сделать скриншот '$1'!"
+		&& wcs_println "Скриншот '$1' сохранен в '$2'." || wcs_println "Не удаётся сделать скриншот '$1'!"
 	return 0
 }
 
@@ -190,7 +209,7 @@ function wcs_deep_scan_host () {
 		do
 			if [ "$(( i++ ))" -ge "$LIBAV_LIMIT" ]
 			then
-				echo "Достигнут LIBAV_LIMIT ($LIBAV_LIMIT)!" >> "$libav_tmp"
+				wcs_println "Достигнут LIBAV_LIMIT ($LIBAV_LIMIT)!" >> "$libav_tmp"
 				break
 			fi
 
@@ -213,7 +232,7 @@ function wcs_deep_scan_host () {
 		grep -q 'Interleaved RTP mode is not supported yet' "$libav_tmp" \
 			&& f="${f}_il"
 
-		echo >> "$nmap_tmp" # Разделительная пустая строка.
+		wcs_println >> "$nmap_tmp" # Разделительная пустая строка.
 		cat "$libav_tmp" >> "$nmap_tmp"
 
 		wcs_clean "$libav_tmp"
@@ -226,7 +245,7 @@ function wcs_deep_scan_host () {
 		cat "$nmap_tmp" >> "$infofile" # ! Дозапись
 		wcs_fix_own "$infofile"
 	else
-		echo -e "\nПропуск '$1': Нет тегов.\n" >> "$OUT_ALL" # ! Дозапись
+		wcs_printb "\nПропуск '$1': Нет тегов.\n\n" >> "$OUT_ALL" # ! Дозапись
 	fi
 
 	wcs_clean "$nmap_tmp"
