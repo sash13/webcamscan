@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Загружаем настройки
-. "$(dirname "$0")/config.sh"
+. "$(dirname "$0")/wcs-config.sh"
 export NMAPDIR="${NMAPDIR:-.}"
 export WRITE_ALL_HOSTS="${WRITE_ALL_HOSTS:-true}"
 export HOST_TIMELIMIT="${HOST_TIMELIMIT:-5m}"
@@ -169,19 +169,6 @@ function wcs_discover () {
 }
 
 
-# Записывает найденые хосты в выходную папку:
-# $1 - файл с хостами, stdio - игнорируется
-function wcs_write_all_hosts () {
-	if [[ "$WRITE_ALL_HOSTS" = 'true' ]]
-	then
-		local file="${OUT}/all_hosts.txt"
-		cat "$1" >> "$file"
-		wcs_fix_own "$file"
-	fi
-	return 0
-}
-
-
 # Снимает пробу:
 # $1 - URL трансляции, stdout - лог пробы, stderr - сообщения wcs
 function wcs_libav_probe () {
@@ -199,10 +186,15 @@ function wcs_libav_screenshot () {
 	return 0
 }
 
-
 # Глубокое сканирование хоста:
-# $1 - хост, stdout - игнорируется, stderr - сообщения wcs
+# $1 - папка, $2 - хост, stdout - игнорируется, stderr - сообщения wcs
 function wcs_deep_scan_host () {
+	if [[ "$WRITE_ALL_HOSTS" = 'true' ]]
+	then
+		local file="${2}/all_hosts.txt"
+		cat "$2" >> "$file"
+		wcs_fix_own "$file"
+	fi
 
 	local script='rtsp-methods,rtsp-url-brute,http-title'
 	[[ "$FIND_AUTH" = 'true' ]] && script="$script,http-auth,http-auth-finder"
@@ -217,7 +209,7 @@ function wcs_deep_scan_host () {
 	# 81,8008,8081 - Beward MJPG
 	nmap -vvv --privileged -T4 -n -PN -sS -sU -p T:80,T:81,T:8008,T:8080,T:8081,T:554,U:554 --reason \
 		--script "$script" --script-args "$script_args" \
-		--host-timeout "$HOST_TIMELIMIT" "$1" &> "$nmap_tmp"
+		--host-timeout "$HOST_TIMELIMIT" "$2" &> "$nmap_tmp"
 
 	local f=''
 
@@ -265,7 +257,7 @@ function wcs_deep_scan_host () {
 			wcs_echo_subprogress
 			wcs_libav_probe "$item3" &>> "$libav_tmp"
 			[[ "$LIBAV_SCREENSHOT" = 'true' ]] \
-				&& wcs_libav_screenshot "$item3" "${OUT}/${1}_${i}.jpg" &>> "$libav_tmp"
+				&& wcs_libav_screenshot "$item3" "${1}/${2}_${i}.jpg" &>> "$libav_tmp"
 
 		done
 
@@ -287,45 +279,43 @@ function wcs_deep_scan_host () {
 		wcs_clean "$libav_tmp"
 	fi
 
-	local out_all="${OUT}/all.txt"
+	local out_all="${1}/all.txt"
 	if [[ -n "$f" || "$SAVE_NO_FLAGS" = 'true' ]]
 	then
 		cat "$nmap_tmp" >> "$out_all" # ! Дозапись
-		local infofile="${OUT}/${1}${f}_.txt"
+		local infofile="${1}/${2}${f}_.txt"
 		cat "$nmap_tmp" >> "$infofile" # ! Дозапись
 		wcs_fix_own "$infofile"
 	else
-		wcs_printb "\nПропуск '$1': Нет тегов.\n\n" &>> "$out_all" # ! Дозапись
+		wcs_printb "\nПропуск '$2': Нет тегов.\n\n" &>> "$out_all" # ! Дозапись
 	fi
 
 	wcs_clean "$nmap_tmp"
 }
 
 function wcs_deep_scan () {
-
-	export OUT="${OUT:-$2}"
-	export TMP="${TMP:-$OUT/tmp}"
-	
-
-	mkdir -p "$OUT" &> /devnull && [[ -d "$OUT" ]] \
-		|| wcs_error "Не удаётся создать папку '$OUT'."
-
+	mkdir -p "$2" &> /devnull
+	[[ -d "$2" ]] || wcs_error "Не удаётся создать папку '$2'."
 	if [[ -z "$1" || "$1" == '-' ]]
 	then
-		wcs_iterate_stdin wcs_deep_scan_host 
+		wcs_iterate_stdin wcs_deep_scan_host "$2"
 	else
-		wcs_iterate_file "$1" wcs_deep_scan_host
+		wcs_iterate_file "$1" wcs_deep_scan_host "$2"
 	fi
+	wcs_fix_own "$2"
 	return 0
 }
 
 
 function wcs_clean () {
-	[[ "$CLEANUP" = 'true' && -e "$1" ]] && rm -rf "$1"
+	if [[ -e "$1"  ]]
+	then
+		if [[ "$CLEANUP" = 'true' ]] 
+		then
+			rm -rf "$1"
+		else
+			wcs_fix_own "$2"
+		fi
+	fi
 }
 
-
-function wcs_cleanup () {
-	wcs_clean "$TMP"
-	wcs_fix_own "$OUT"
-}

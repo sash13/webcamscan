@@ -5,10 +5,8 @@ wcs_check_nmap
 wcs_check_root
 wcs_check_file "$1"
 
-echo "Поиск..."
+wcs_println "Поиск..."
 wcs_discover "$1" "$2"
 
-wcs_cleanup
-
-echo "Готово!"
+wcs_println "Готово!"
 exit 0

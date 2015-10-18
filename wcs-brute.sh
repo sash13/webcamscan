@@ -4,9 +4,6 @@
 wcs_check_pcregrep
 wcs_check_root
 
-#         1      1   2              23 4      43 5  5
-PCRE_URL='([a-z]+)://([a-z0-9.-]+)(:([0-9]+))?(.*)'
-
 rproto=$(wcs_println "$1" | pcregrep -o1 -i "$PCRE_URL")
 rhost=$(wcs_println "$1" | pcregrep -o2 -i "$PCRE_URL")
 rport=$(wcs_println "$1" | pcregrep -o4 -i "$PCRE_URL")
@@ -15,15 +12,16 @@ rpath=$(wcs_println "$1" | pcregrep -o5 -i "$PCRE_URL")
 # Пути по умолчанию
 [[ -z "$rpath" ]] && rpath='/'
 
-if [[ "$rproto" =~ https? ]]; then
+if [[ "$rproto" =~ https? ]]
+then
 	scripts='http-title,http-auth,http-brute,http-form-brute'
 	scripts_args="http-auth.path='$rpath',http-form-brute.path='$rpath',http-brute.path='$rpath'"
-elif [[ "$rproto" =~ ftp ]]; then
+elif [[ "$rproto" =~ ftp ]]
+then
 	scripts='ftp-brute'
 	scripts_args='ftp-brute.timeout=10h'
 else
-	wcs_println "Протокол '$rproto' не поддерживается."
-	exit 1
+	wcs_error "Протокол '$rproto' не поддерживается."
 fi
 scripts_args="$scripts_args,brute.timeout=10h,brute.retries=1000000,unpwdb.timelimit=10h"
 
