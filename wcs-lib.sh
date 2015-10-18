@@ -191,8 +191,8 @@ function wcs_libav_screenshot () {
 function wcs_deep_scan_host () {
 	if [[ "$WRITE_ALL_HOSTS" = 'true' ]]
 	then
-		local file="${2}/all_hosts.txt"
-		cat "$2" >> "$file"
+		local file="${1}/all_hosts.txt"
+		echo "$2" >> "$file"
 		wcs_fix_own "$file"
 	fi
 
@@ -253,13 +253,13 @@ function wcs_deep_scan_host () {
 				wcs_println "Достигнут LIBAV_LIMIT ($LIBAV_LIMIT)!" &>> "$libav_tmp"
 				break
 			fi
-
 			wcs_echo_subprogress
 			wcs_libav_probe "$item3" &>> "$libav_tmp"
 			[[ "$LIBAV_SCREENSHOT" = 'true' ]] \
 				&& wcs_libav_screenshot "$item3" "${1}/${2}_${i}.jpg" &>> "$libav_tmp"
-
+			wcs_printb '\n' &>> "$libav_tmp" # Разделительная пустая строка.
 		done
+		wcs_printb '\n\n' &>> "$libav_tmp" # Разделительная пустая строка.
 
 		# Флаг: Есть видео
 		grep -q 'Stream #[.0-9]*: Video' "$libav_tmp" \
@@ -273,8 +273,7 @@ function wcs_deep_scan_host () {
 		grep -q 'Interleaved RTP mode is not supported yet' "$libav_tmp" \
 			&& f="${f}_il"
 
-		wcs_println &>> "$nmap_tmp" # Разделительная пустая строка.
-		cat "$libav_tmp" &>> "$nmap_tmp"
+		cat "$libav_tmp" >> "$nmap_tmp"
 
 		wcs_clean "$libav_tmp"
 	fi
