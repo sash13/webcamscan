@@ -6,8 +6,10 @@ wcs_check_nmap
 wcs_check_root
 wcs_check_file "$1"
 
+wcs_init_io
+
 wcs_println "Расширенное сканирование..."
-wcs_iterate_file "$1" wcs_deep_scan_host
+wcs_deep_scan "$1" "$2"
 
 wcs_println "Готово!"
 exit 0

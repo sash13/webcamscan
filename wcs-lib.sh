@@ -2,35 +2,23 @@
 
 # Загружаем настройки
 . "$(dirname "$0")/config.sh"
-NMAPDIR="${NMAPDIR:-.}"
-WRITE_ALL_HOSTS="${WRITE_ALL_HOSTS:-true}"
-HOST_TIMELIMIT="${HOST_TIMELIMIT:-5m}"
-RTSP_URLS="${RTSP_URLS:-./rtsp-urls.txt}"
-FIND_AUTH="${FIND_AUTH:-true}"
-BRUTEFORCE="${BRUTEFORCE:-true}"
-BRUTEFORCE_TIMELIMIT="${BRUTEFORCE_TIMELIMIT:-2m}"
-LIBAV_LIMIT="${LIBAV_LIMIT:-4}"
-LIBAV_SCREENSHOT="${LIBAV_SCREENSHOT:-true}"
-SAVE_NO_FLAGS="${SAVE_NO_FLAGS:-false}"
-CLEANUP="${CLEANUP:-true}"
+export NMAPDIR="${NMAPDIR:-.}"
+export WRITE_ALL_HOSTS="${WRITE_ALL_HOSTS:-true}"
+export HOST_TIMELIMIT="${HOST_TIMELIMIT:-5m}"
+export RTSP_URLS="${RTSP_URLS:-./rtsp-urls.txt}"
+export FIND_AUTH="${FIND_AUTH:-true}"
+export BRUTEFORCE="${BRUTEFORCE:-true}"
+export BRUTEFORCE_TIMELIMIT="${BRUTEFORCE_TIMELIMIT:-2m}"
+export LIBAV_LIMIT="${LIBAV_LIMIT:-4}"
+export LIBAV_SCREENSHOT="${LIBAV_SCREENSHOT:-true}"
+export SAVE_NO_FLAGS="${SAVE_NO_FLAGS:-false}"
+export CLEANUP="${CLEANUP:-true}"
 
 # 'Константные' регексы
-REGEX_IP='([0-9]{1,3}\.){3}[0-9]{1,3}'
-REGEX_URL_RSTP='rtsp://[0-9.]+/\S*'
-
-# Рабочие переменные окружения
-OUT="${OUT:-$1-webcam}"
-OUT_ALL="${OUT}/all.txt"
-mkdir -p "$OUT"
-TMP="${TMP:-$OUT/tmp}"
-mkdir -p "$TMP"
-
-SCRIPTS='rtsp-methods,rtsp-url-brute,http-title'
-[[ "$FIND_AUTH" = 'true' ]] && SCRIPTS="$SCRIPTS,http-auth,http-auth-finder"
-[[ "$BRUTEFORCE" = 'true' ]] && SCRIPTS="$SCRIPTS,http-brute,http-form-brute"
-SCRIPTS_ARGS="unpwdb.timelimit='$BRUTEFORCE_TIMELIMIT'"
-SCRIPTS_ARGS="$SCRIPTS_ARGS,rtsp-url-brute.urlfile='$RTSP_URLS',brute.retries=10240"
-SCRIPTS_ARGS="$SCRIPTS_ARGS,http-auth.path='/',http-form-brute.path='/',http-brute.path='/'"
+export REGEX_IP='([0-9]{1,3}\.){3}[0-9]{1,3}'
+export REGEX_URL_RSTP='rtsp://[0-9.]+/\S*'
+#                1      1   2           23 4      43 5  5
+export PCRE_URL='([a-z]+)://([a-z0-9.-]+)(:([0-9]+))?(.*)'
 
 
 function wcs_print () {
@@ -67,44 +55,54 @@ function wcs_echo_subprogress () {
 function wcs_check_bash () {
 	(( ${BASH_VERSION%%[^0-9]*} < 4 )) \
 		&& wcs_error "Вы используете устревший ($BASH_VERSION) bash, не обходима версия не ниже 4."
+	return 0
 }
 
 function wcs_check_root () {
 	[[ $EUID -ne 0 ]] \
 		&& wcs_error "Скрипт должен работать от root."
+	return 0
 }
 
 function wcs_check_pcregrep () {
 	pcregrep --version &> /dev/null \
 		|| wcs_error "pcregrep не обнаружен."
+	return 0
 }
 
 function wcs_check_nmap () {
 	nmap --version &> /dev/null \
 		|| wcs_error "nmap не обнаружен."
+	return 0
 }
 
 function wcs_check_file () {
-	[[ ! -f "$1" ]] \
+	[[ "$1" != '-' && ! -f "$1" ]] \
 		&& wcs_error "Файл '$1' не найден!"
+	return 0
 }
-
 
 function wcs_alloc_temp () {
-	mktemp --tmpdir="${TMP}/"
-}
-
-
-# Исправляет владельца файла из-за выполенния от root'а: $1 - файл
-function wcs_fix_own () {
-	# Не уверен, что это правильно.
-	local u=$(who am i | awk '{print $1}')
-	chown -R "$u:$u" "$1"
+	mktemp
 	return 0
 }
 
 
-# Обход по файлу с прогрессом: $1 - файл, $2... - коллбек
+# Исправляет владельца файла из-за выполенния от root'а:
+# $1 - файл, stdio - игнорируется
+function wcs_fix_own () {
+	if [[ -n "$1" && -e "$1" ]]
+	then
+		# Не уверен, что это правильно.
+		local u=$(who am i | awk '{print $1}')
+		chown -R "$u:$u" "$1" &> /dev/null
+	fi
+	return 0
+}
+
+
+# Обход по файлу с прогрессом:
+# $1 - файл, $2... - коллбек, stderr - сообщения wcs
 function wcs_iterate_file () {
 	local file="$1"
 	shift
@@ -119,21 +117,60 @@ function wcs_iterate_file () {
 	return 0
 }
 
+# Обход по stdin с прогрессом:
+# $1... - коллбек, stderr - сообщения wcs
+function wcs_iterate_stdin () {
+	local i=1
+	local item
+	while IFS=$'\n' read -r item || [[ -n "$item" ]]
+	do
+		wcs_print " $(( i++ ))"
+		$@ "$item" #INVOKE CALLBACK
+	done
+	wcs_println # NL после прогресса
+	return 0
+}
 
-# Первичное сканирование целей: $1 - куда сохранять, $2 - цели 
-function wcs_scan () {
-	local out="$1"
-	[[ -z "$out" || "$out" == '-' ]] && out='/dev/stdout'
+
+# Первичное сканирование целей: 
+# $1 - цели, stdout - найденые, stderr - чист
+function wcs_discover_nmap () {
 	nmap --privileged -n -sS -sU -p T:554,U:554 --open --max-retries 3 --host-timeout 10s \
 		--randomize-hosts --min-parallelism=4 --min-hostgroup=4096 --max-hostgroup=65536 \
-		-oG - $(printf "%q" "$2" ) 2>&1 | grep 'open/' | grep -Eo "$REGEX_IP" | uniq >> "$out"
+		-oG - $(printf "%q" "$1" ) 2>&1 | grep 'open/' | grep -Eo "$REGEX_IP" | uniq 2>/dev/null
 		#     ^ этот костыль нужен, потому что nmap не принимает список хостов
 		#       как один аргумент, но переменные нужно как-то экранировать.
 	return 0
 }
 
+# Первичное сканирование целей:
+# $1 или stdin - цели, stdout - найденые, stderr - сообщения wcs
+function wcs_discover_stdout () {
+	if [[ -z "$1" || "$1" == '-' ]]
+	then
+		wcs_iterate_stdin wcs_discover_nmap | sort -R - | uniq
+	else
+		wcs_iterate_file "$1" wcs_discover_nmap | sort -R - | uniq
+	fi
+	return 0
+}
 
-# Записывает найденые хосты в выходную папку: $1 - файл с хостами
+# Первичное сканирование целей:
+# $1 или stdin  - цели , $2 или stdout - найденые, stderr - сообщения wcs
+function wcs_discover () {
+	if [[ -z "$2" || "$2" == '-' ]]
+	then
+		wcs_discover_stdout "$1"
+	else
+		wcs_discover_stdout "$1" >> "$2"
+		wcs_fix_own "$2"
+	fi
+	return 0
+}
+
+
+# Записывает найденые хосты в выходную папку:
+# $1 - файл с хостами, stdio - игнорируется
 function wcs_write_all_hosts () {
 	if [[ "$WRITE_ALL_HOSTS" = 'true' ]]
 	then
@@ -145,32 +182,44 @@ function wcs_write_all_hosts () {
 }
 
 
-# Сохраняет скриншот: $1 - трансляция, $2 - файл.
+# Снимает пробу:
+# $1 - URL трансляции, stdout - лог пробы, stderr - сообщения wcs
 function wcs_libav_probe () {
-	timeout -k 5 25 avprobe -v info "$1" && wcs_println "Не удаётся сделать avprobe '$1'!"
+	timeout -k 5 25 avprobe -v info "$1" 2>&1 \
+		&& wcs_println "Не удаётся сделать avprobe '$1'!"
 	return 0
 }
 
-
-# Сохраняет скриншот: $1 - трансляция, $2 - файл.
+# Сохраняет скриншот:
+# $1 - трансляция, $2 - файл, stdout - лог, stderr - сообщения wcs
 function wcs_libav_screenshot () {
-	timeout -k 5 25 avconv -v quiet -i "$1" -ss 3 -qscale 0 -t 1 -r 1 "$2"
+	timeout -k 5 25 avconv -v quiet -i "$1" -ss 3 -qscale 0 -t 1 -r 1 "$2" 2>&1
 	[[ -f "$2" ]] && wcs_fix_own "$2" \
 		&& wcs_println "Скриншот '$1' сохранен в '$2'." || wcs_println "Не удаётся сделать скриншот '$1'!"
 	return 0
 }
 
 
-# Глубокое сканирование хоста: $1 - хост
+# Глубокое сканирование хоста:
+# $1 - хост, stdout - игнорируется, stderr - сообщения wcs
 function wcs_deep_scan_host () {
 
+	local script='rtsp-methods,rtsp-url-brute,http-title'
+	[[ "$FIND_AUTH" = 'true' ]] && script="$script,http-auth,http-auth-finder"
+	[[ "$BRUTEFORCE" = 'true' ]] && script="$script,http-brute,http-form-brute"
+
+	local script_args="unpwdb.timelimit='$BRUTEFORCE_TIMELIMIT'"
+	script_args="$script_args,rtsp-url-brute.urlfile='$RTSP_URLS',brute.retries=10240"
+	script_args="$script_args,http-auth.path='/',http-form-brute.path='/',http-brute.path='/'"
+
 	local nmap_tmp=$(wcs_alloc_temp)
-	local f=''
 
 	# 81,8008,8081 - Beward MJPG
 	nmap -vvv --privileged -T4 -n -PN -sS -sU -p T:80,T:81,T:8008,T:8080,T:8081,T:554,U:554 --reason \
-		--script "$SCRIPTS" --script-args "$SCRIPTS_ARGS" \
+		--script "$script" --script-args "$script_args" \
 		--host-timeout "$HOST_TIMELIMIT" "$1" &> "$nmap_tmp"
+
+	local f=''
 
 	# Флаг: Ошибка
 	grep -q 'Skipping host [0-9.]+ due to host timeout' "$nmap_tmp" \
@@ -209,7 +258,7 @@ function wcs_deep_scan_host () {
 		do
 			if [ "$(( i++ ))" -ge "$LIBAV_LIMIT" ]
 			then
-				wcs_println "Достигнут LIBAV_LIMIT ($LIBAV_LIMIT)!" >> "$libav_tmp"
+				wcs_println "Достигнут LIBAV_LIMIT ($LIBAV_LIMIT)!" &>> "$libav_tmp"
 				break
 			fi
 
@@ -232,23 +281,42 @@ function wcs_deep_scan_host () {
 		grep -q 'Interleaved RTP mode is not supported yet' "$libav_tmp" \
 			&& f="${f}_il"
 
-		wcs_println >> "$nmap_tmp" # Разделительная пустая строка.
-		cat "$libav_tmp" >> "$nmap_tmp"
+		wcs_println &>> "$nmap_tmp" # Разделительная пустая строка.
+		cat "$libav_tmp" &>> "$nmap_tmp"
 
 		wcs_clean "$libav_tmp"
 	fi
 
+	local out_all="${OUT}/all.txt"
 	if [[ -n "$f" || "$SAVE_NO_FLAGS" = 'true' ]]
 	then
-		cat "$nmap_tmp" >> "$OUT_ALL" # ! Дозапись
+		cat "$nmap_tmp" >> "$out_all" # ! Дозапись
 		local infofile="${OUT}/${1}${f}_.txt"
 		cat "$nmap_tmp" >> "$infofile" # ! Дозапись
 		wcs_fix_own "$infofile"
 	else
-		wcs_printb "\nПропуск '$1': Нет тегов.\n\n" >> "$OUT_ALL" # ! Дозапись
+		wcs_printb "\nПропуск '$1': Нет тегов.\n\n" &>> "$out_all" # ! Дозапись
 	fi
 
 	wcs_clean "$nmap_tmp"
+}
+
+function wcs_deep_scan () {
+
+	export OUT="${OUT:-$2}"
+	export TMP="${TMP:-$OUT/tmp}"
+	
+
+	mkdir -p "$OUT" &> /devnull && [[ -d "$OUT" ]] \
+		|| wcs_error "Не удаётся создать папку '$OUT'."
+
+	if [[ -z "$1" || "$1" == '-' ]]
+	then
+		wcs_iterate_stdin wcs_deep_scan_host 
+	else
+		wcs_iterate_file "$1" wcs_deep_scan_host
+	fi
+	return 0
 }
 
 
@@ -259,5 +327,5 @@ function wcs_clean () {
 
 function wcs_cleanup () {
 	wcs_clean "$TMP"
-	[[ -n "$OUT" ]] && wcs_fix_own "$OUT"
+	wcs_fix_own "$OUT"
 }
