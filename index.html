@@ -13,14 +13,14 @@
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 
-    <title>Webcamscan by voaoom</title>
+    <title>webcamscan by voaoom</title>
   </head>
 
   <body>
     <header>
       <div class="inner">
-        <h1>Webcamscan</h1>
-        <h2>web camera scaner</h2>
+        <h1>webcamscan</h1>
+        <h2>Набор скриптов для полу-автоматического поиска веб-камер в сети</h2>
         <a href="https://github.com/voaoom/webcamscan" class="button"><small>View project on</small> GitHub</a>
       </div>
     </header>
@@ -31,34 +31,44 @@
           <h1>
 <a id="webcamscan" class="anchor" href="#webcamscan" aria-hidden="true"><span class="octicon octicon-link"></span></a>webcamscan</h1>
 
-<p>Скрипт для полу-автоматического поиска веб-камер в сети, умеющий искать RTSP-трансляции и делать их срины, умеющий подбирать логин-пароли для вэб-панелей, умеющий сортировать результаты и ставить тэги.
+<p>Набор скриптов для полу-автоматического поиска веб-камер в сети, умеющий искать RTSP-трансляции и делать их срины, умеющий подбирать логин-пароли для вэб-панелей, умеющий сортировать результаты и ставить тэги.
 Получается примерно так:
-<img src="http://i.imgur.com/dMNDljm.png" alt="Пример результата"></p>
+<img src="http://i.imgur.com/SQy7fyo.png" alt="Пример результата"></p>
 
 <hr>
 
-<p><img class="emoji" title=":bangbang:" alt=":bangbang:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/203c.png" height="20" width="20" align="absmiddle"> <strong>ВНИМАНИЕ: Скрипт предназначен только для ознакомительных и учебных целей. Использование его может быть <em>противозаконным</em>. Используйте его на свой страх и риск с согласия всех участников.</strong></p>
+<p><img class="emoji" title=":bangbang:" alt=":bangbang:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/203c.png" height="20" width="20" align="absmiddle"> </p>
+
+<p><strong>ВНИМАНИЕ: Скрипт предназначен только для ознакомительных и учебных целей. Использование его может быть <em>противозаконным</em>. Используйте его на свой страх и риск с согласия всех участников.</strong></p>
+
+<p><img class="emoji" title=":bangbang:" alt=":bangbang:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/203c.png" height="20" width="20" align="absmiddle"> </p>
 
 <hr>
+
+<p><a name="requestments"></a></p>
 
 <h3>
 <a id="Зависимости-скрипта" class="anchor" href="#%D0%97%D0%B0%D0%B2%D0%B8%D1%81%D0%B8%D0%BC%D0%BE%D1%81%D1%82%D0%B8-%D1%81%D0%BA%D1%80%D0%B8%D0%BF%D1%82%D0%B0" aria-hidden="true"><span class="octicon octicon-link"></span></a>Зависимости скрипта:</h3>
 
-<p>Обязательно:</p>
+<h5>
+<a id="Обязательно" class="anchor" href="#%D0%9E%D0%B1%D1%8F%D0%B7%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE" aria-hidden="true"><span class="octicon octicon-link"></span></a>Обязательно:</h5>
 
 <ul>
 <li>
 <del>ЖМУ/Пинус</del> GNU/Linux. Может быть и OSX, но я не пробовал.</li>
 <li>
-<code>bash</code>, ну или какой-нибудь еще шелл.</li>
+<code>bash</code> не ниже v.4.</li>
 <li>Команда <code>timeout</code>, сейчас она есть везде, но вдруг вы — аутист?</li>
+<li>
+<code>pcregrep</code> — grep с поддержкой PCRE.</li>
 <li>
 <code>nmap-nse</code> — NMap с поддержкой скриптов (NSE).</li>
 <li>
 <code>libav</code> (<code>avprobe</code>, <code>avconv</code>) — Для анализа трансляций и скриншотов.</li>
 </ul>
 
-<p>Не обязательно:</p>
+<h5>
+<a id="Не-обязательно" class="anchor" href="#%D0%9D%D0%B5-%D0%BE%D0%B1%D1%8F%D0%B7%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE" aria-hidden="true"><span class="octicon octicon-link"></span></a>Не обязательно:</h5>
 
 <ul>
 <li>
@@ -66,23 +76,26 @@
 <li>TODO: <code>ffmpeg</code> (<code>ffprobe</code>) как альтернатива <code>libav</code>.</li>
 </ul>
 
+<p><a name="launching"></a></p>
+
 <h3>
-<a id="Запуск-скрипта" class="anchor" href="#%D0%97%D0%B0%D0%BF%D1%83%D1%81%D0%BA-%D1%81%D0%BA%D1%80%D0%B8%D0%BF%D1%82%D0%B0" aria-hidden="true"><span class="octicon octicon-link"></span></a>Запуск скрипта:</h3>
+<a id="Запуск-скриптов" class="anchor" href="#%D0%97%D0%B0%D0%BF%D1%83%D1%81%D0%BA-%D1%81%D0%BA%D1%80%D0%B8%D0%BF%D1%82%D0%BE%D0%B2" aria-hidden="true"><span class="octicon octicon-link"></span></a>Запуск скриптов</h3>
 
 <ul>
 <li><code>git clone https://github.com/voaoom/webcamscan.git</code></li>
 <li><code>cd webcamscan</code></li>
-<li><code>chmod +x ./webcamscan.sh</code></li>
-<li>Вы можете поднастроить скрипт по своему вкусу, раскомментировав и поправив в строки в файле <code>./config.sh</code>. См. ниже.</li>
-<li>Скрипт работает под правами суперпользователя. Это необходимо для эффективной работы <code>nmap</code>. Где гарантии, что он не сделает <code>rm -rf /</code>? Их нет, мне похуй.</li>
-<li>Скрипт принимает на вход файл с подсетями-целми: <code>sudo ./webcamscan.sh &lt;путь/к/списку/адресов.txt&gt;</code>. Список адресов содержит либо конкретные хосты и адреса, либо подсети, разделенные любыми проблеьными символами.</li>
+<li><code>chmod +x ./wcs-*.sh</code></li>
+<li>Вы можете поднастроить скрипт по своему вкусу, cм. ниже.</li>
+<li>Скрипты работают под правами суперпользователя. Это необходимо для эффективной работы <code>nmap</code>. Где гарантии, что он не сделает <code>rm -rf /</code>? Их нет, мне похуй.</li>
 </ul>
 
-<h3>
-<a id="Настройки-скрипта" class="anchor" href="#%D0%9D%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B8-%D1%81%D0%BA%D1%80%D0%B8%D0%BF%D1%82%D0%B0" aria-hidden="true"><span class="octicon octicon-link"></span></a>Настройки скрипта</h3>
+<p><a name="wcs-config"></a></p>
 
-<p>Вы можете поднастроить скрипт по своему вкусу, раскомментировав и поправив в строки в файле <code>./config.sh</code>. Будте осторожны: я не делал защиту от дебилов. Неправильные значения могут поломать скрипт и снести вашу систему. <strong>Почитайте ниже, как скрипт работает</strong>, что бы понимать, что  происходит.
-Параметры:</p>
+<h3>
+<a id="wcs-configsh--Настройки-скриптов" class="anchor" href="#wcs-configsh--%D0%9D%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B8-%D1%81%D0%BA%D1%80%D0%B8%D0%BF%D1%82%D0%BE%D0%B2" aria-hidden="true"><span class="octicon octicon-link"></span></a>wcs-config.sh — Настройки скриптов</h3>
+
+<p>Вы можете поднастроить скрипт по своему вкусу, раскомментировав и поправив в строки в файле <code>./wcs-config.sh</code>, либо же установив переменные окружения перед запуском скриптов. Будте осторожны: я не делал защиту от дебилов. Неправильные значения могут поломать скрипты и снести вашу систему. <strong>Почитайте ниже, как скрипты работает</strong>, что бы понимать, что  происходит.
+Описание параметров:</p>
 
 <ul>
 <li>
@@ -111,54 +124,58 @@
 <code>CLEANUP=true</code> — удалять за собой временные файлы или нет.</li>
 </ul>
 
+<p><a name="wcs-discover"></a></p>
+
 <h3>
-<a id="Работа-скрипта" class="anchor" href="#%D0%A0%D0%B0%D0%B1%D0%BE%D1%82%D0%B0-%D1%81%D0%BA%D1%80%D0%B8%D0%BF%D1%82%D0%B0" aria-hidden="true"><span class="octicon octicon-link"></span></a>Работа скрипта:</h3>
+<a id="wcs-discoversh--Первичный-поиск" class="anchor" href="#wcs-discoversh--%D0%9F%D0%B5%D1%80%D0%B2%D0%B8%D1%87%D0%BD%D1%8B%D0%B9-%D0%BF%D0%BE%D0%B8%D1%81%D0%BA" aria-hidden="true"><span class="octicon octicon-link"></span></a>wcs-discover.sh — Первичный поиск</h3>
 
-<ul>
-<li>
-<img class="emoji" title=":one:" alt=":one:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/0031-20e3.png" height="20" width="20" align="absmiddle"> <strong>Первый этап</strong>: Скрипт, используя <code>nmap</code>, полностью сканирует все эти сети на предмет открытого RTSP-порта — это с 95% вероятностью вэб-камера (1% — медиасервер, 4% — что-нибудь еще). Все обнаруженные хосты сохраняются.
+<p>Этот скрипт осуществляет поиск хостов, которые могут быть вэб-камерами с большой вероятностю, но не исследует их. По-сути этот скрипт из тысяч адресов выбирает те еденицы, которые имеет смысл сканировать. Он, используя <code>nmap</code>, полностью сканирует все указанные сети на предмет открытого RTSP-порта — это с 95% вероятностью вэб-камера (1% — медиасервер, 4% — что-нибудь еще). Все обнаруженные хосты сохраняются.</p>
 
-<ul>
-<li>Примечание: Этот этап может выполняться долго и тихо, так что я добавил сюда прогресс. Прогресс отчитывается по строкам входного файла. Каждая строка по очереди загоняется в <code>nmap</code>, так что если всё будет записано в одну строку, то прогресса не будет, а если каждый адрес на своей строке, то на каждый адрес каждый раз будет завново запускаться <code>nmap</code>. Таким образом, первый случай быстрый, но не наглядный, а второй наглядный, но медленный.</li>
-</ul>
-</li>
-<li>
-<img class="emoji" title=":two:" alt=":two:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/0032-20e3.png" height="20" width="20" align="absmiddle"> <strong>Второй этап</strong>: Скрипт, используя <code>nmap</code>, подробно сканирует найденые хосты. На этом этапе, в звисимости от настроек, происходит:
+<p><img class="emoji" title=":information_source:" alt=":information_source:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/2139.png" height="20" width="20" align="absmiddle"> <strong>Примечание:</strong> Этот скрипт может выполняться долго и тихо, так что я добавил сюда прогресс. Прогресс отчитывается по строкам входного файла. Каждая строка по очереди загоняется в <code>nmap</code>, так что если всё будет записано в одну строку, то прогресса не будет, а если каждый адрес на своей строке, то на каждый адрес каждый раз будет завново запускаться <code>nmap</code>. Таким образом, первый случай быстрый, но не наглядный, а второй наглядный, но медленный. При работе с файлами происходит подсчет строк и вывод осуществляется в процентах, но при чтении с <code>stdin</code> это не возможно, тогда прогресс просто подсчитывается возрастающими числами.</p>
+
+<p><img class="emoji" title=":computer:" alt=":computer:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f4bb.png" height="20" width="20" align="absmiddle"> <strong>Синтаксис:</strong> <code>./wcs-discover.sh &lt;файл-с-целями&gt; &lt;файл-с-обнаруженными-хостами&gt;</code>. Можно указать <code>-</code>, это означает чтение из <code>stdin</code> и запись в <code>stdout</code>. Прогресс и сообщения пользователю выводятся в <code>stderr</code> в любом случае.</p>
+
+<p><a name="wcs-deepscan"></a></p>
+
+<h3>
+<a id="wcs-deepscansh--Глубокое-сканирование" class="anchor" href="#wcs-deepscansh--%D0%93%D0%BB%D1%83%D0%B1%D0%BE%D0%BA%D0%BE%D0%B5-%D1%81%D0%BA%D0%B0%D0%BD%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5" aria-hidden="true"><span class="octicon octicon-link"></span></a>wcs-deepscan.sh — Глубокое сканирование</h3>
+
+<p>Этот скрипт, используя <code>nmap</code>, подробно сканирует найденые хосты. В звисимости от настроек, происходит:</p>
 
 <ul>
 <li>Быстрый <strong>перебор логин-паролей</strong> на HTTP-панели, если такая панель обнаружена, что бы найти пары типа <code>admin:admin</code> и <code>root:123456</code>.</li>
 <li>Поиск других страниц авторизации, если они существуют, но они <strong>пока</strong> не перебираются. Перебираются только те, что находятся в <code>/</code> HTTP-службы.</li>
 <li>Быстрый <strong>перебор известных RTSP-URL-ов</strong>, что бы найти все возможные трансляции, но нет гарантий, что скрипт точно обнаружит их. Если он не нашел ниодной трансляции, но RTSP-сервер выглядит рабочим, то, скорее всего, там используются более хитрые URL-ы и/или авторизация. Попробуйте порыться в вэб-панели, может найдете информацию. Если ничего не получилось, то этот хост можно прогнорировать или до-взламывать вручную.</li>
-<li>Найденые RTSP-URL-ы передаются в <code>avprobe</code> для изучения трансляции, а также создаются их скриншоты с помощью <code>avconv</code>. Иногда сервера ебут мозги отправляя пустые пакеты или какой-нибудь мусор, из-за чего эти две программы начинают тупить и это может растянуться на часы. На них выставлено ограничение в несколько десятков секунд, так что есть вероятность, что они не выдадут результат.</li>
+<li>Найденые RTSP-URL-ы передаются в <code>avprobe</code> для <strong>изучения трансляции</strong>, а также <strong>создаются</strong> их <strong>скриншоты</strong> с помощью <code>avconv</code>. Иногда сервера ебут мозги отправляя пустые пакеты или какой-нибудь мусор, из-за чего эти две программы начинают тупить и это может растянуться на часы. На них выставлено ограничение в несколько десятков секунд, так что есть вероятность, что они не выдадут результат.</li>
 <li>Выхлоп программ парсится, на основе чего для каждого хоста <strong>выставляются тэги</strong>:
 
 <ul>
 <li>
-<code>http</code> — если была обнаружена хотя бы одна работающая HTTP-служба. От этого тэга зависят:
+<img class="emoji" title=":page_facing_up:" alt=":page_facing_up:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f4c4.png" height="20" width="20" align="absmiddle"> <code>http</code> — если была обнаружена хотя бы одна <strong>работающая HTTP-служба</strong>. От этого тэга зависят:
 
 <ul>
 <li>
-<code>creds</code> — если был обнаружен какой-то метод авторизации, был проведен перебор и он оказался успешным — учётные данные <strong>найдены</strong>.</li>
+<img class="emoji" title=":unlock:" alt=":unlock:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f513.png" height="20" width="20" align="absmiddle"> <code>creds</code> — если был обнаружен какой-то метод авторизации, был проведен перебор и он оказался успешным — учётные данные <strong>найдены</strong>.</li>
 <li>
-<code>nocreds</code> — если был обнаружен какой-то метод авторизации, был проведен перебор и он оказался проавльным — учётные данные <strong>не найдены</strong>.</li>
+<img class="emoji" title=":lock:" alt=":lock:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f512.png" height="20" width="20" align="absmiddle"> <code>nocreds</code> — если был обнаружен какой-то метод авторизации, был проведен перебор и он оказался проавльным — учётные данные <strong>не найдены</strong>.</li>
 </ul>
 </li>
 <li>
-<code>rtsp</code> — если была обнаружена хотя бы одна RTSP-служба. От этого тэга зависят:
+<img class="emoji" title=":tv:" alt=":tv:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f4fa.png" height="20" width="20" align="absmiddle"> <code>rtsp</code> — если была обнаружена хотя бы одна RTSP-служба. От этого тэга зависят:
 
 <ul>
 <li>
-<code>found</code> — если найден хотя бы один корректный URL трансляции (но не гарантируется, что в трансляции корректные данные). </li>
+<img class="emoji" title=":mag:" alt=":mag:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f50d.png" height="20" width="20" align="absmiddle"> <code>found</code> — если найден хотя бы один корректный <strong>URL трансляции</strong> (но не гарантируется, что в трансляции осмысленные данные). </li>
 <li>
-<code>video</code> — если найдена хотя бы одна трансляция, содержащая <strong>видео</strong>-поток (но не гарантируется, что в этом потоке адекватные данные).</li>
+<img class="emoji" title=":camera:" alt=":camera:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f4f7.png" height="20" width="20" align="absmiddle"> <code>video</code> — если найдена хотя бы одна трансляция, содержащая <strong>видео</strong>-поток (но не гарантируется, что в этом потоке осмысленные данные).</li>
 <li>
-<code>audio</code> — если найдена хотя бы одна трансляция, содержащая <strong>аудио</strong>-поток (но не гарантируется, что в этом потоке адекватные данные).</li>
+<img class="emoji" title=":sound:" alt=":sound:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f509.png" height="20" width="20" align="absmiddle"> <code>audio</code> — если найдена хотя бы одна трансляция, содержащая <strong>аудио</strong>-поток (но не гарантируется, что в этом потоке осмысленные данные).</li>
 <li>
-<code>il</code> — почему-то <code>libav</code> не всегда дружит с Interleaved (TCP) RTSP. Если найдена хотя бы одна такая трансляция, то выставляется этот тэг. Это <strong>не</strong> означает, что трансляция не работает. Она, вероятно, будет открываться с ошибками в плеерах на основе <code>libav</code>, но может корректно работать в других, например <code>vlc</code>.</li>
+<code>il</code> — почему-то <code>libav</code> не всегда дружит с <strong>Interleaved</strong> (TCP) RTSP. Если найдена хотя бы одна такая трансляция, то выставляется этот тэг. Это <strong>не</strong> означает, что трансляция не работает. Она, вероятно, будет открываться с ошибками в плеерах на основе <code>libav</code>, но может корректно работать в других, например <code>vlc</code>.</li>
 </ul>
 </li>
 <li>
-<code>error</code> — какая-то ошибка, из-за которой невозможно утверждать о корректности <strong>отрицательных</strong> результатов. Регистрируется в следующих случаях:
+<img class="emoji" title=":x:" alt=":x:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/274c.png" height="20" width="20" align="absmiddle"> <code>error</code> — какая-то ошибка, из-за которой невозможно утверждать о корректности <strong>отрицательных</strong> результатов. Регистрируется в следующих случаях:
 
 <ul>
 <li>Скрипт <code>rtsp-url-brute</code> в <code>nmap</code> выкинул ошибку. Как правило, возникает, если нарушается протокол. Возможно, RTPS-служба, на самом деле не RTPS или просто она кривая и багнутая.</li>
@@ -173,23 +190,68 @@
 <ul>
 <li>В файлы вида <code>&lt;папка-выхлопа&gt;/&lt;адрес-хоста&gt;_[тэг_[...]].txt</code> — отчёт <code>nmap</code> и отчёты <code>avprobe</code>.</li>
 <li>В файлы вида <code>&lt;папка-выхлопа&gt;/&lt;адрес-хоста&gt;_&lt;порядковый-номер-трансляции&gt;.jpg</code> — скриншот, сделаный <code>avconv</code>.</li>
-<li>В файл <code>all_hosts.txt</code> — список всех адресов, которые сканировались на втором этапе.</li>
-<li>В файл <code>all.txt</code> — все отчёты <code>nmap</code> и <code>avprobe</code> в хронологическом порядке.</li>
-<li>По умолчанию <code>&lt;пака-выхлопа&gt;/</code> это <code>&lt;путь-входного-файла&gt;-webcam/</code>.</li>
+<li>В файл <code>&lt;пака-выхлопа&gt;/all_hosts.txt</code> — список всех адресов, которые сканировались на втором этапе.</li>
+<li>В файл <code>&lt;пака-выхлопа&gt;/all.txt</code> — все отчёты <code>nmap</code> и <code>avprobe</code> в хронологическом порядке.</li>
 <li>Если файлы уже существуют, то будет выполнена дозапись в их конец.</li>
-<li>Сохранение происходит во время второго этапа, так что эти файлы будут появляться по мере обработки хостов.</li>
-</ul>
-</li>
 </ul>
 </li>
 </ul>
 
+<p><img class="emoji" title=":information_source:" alt=":information_source:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/2139.png" height="20" width="20" align="absmiddle"> <strong>Примечание:</strong> Этот скрипт может выполняться долго и тихо, так что я добавил сюда прогресс. Прогресс отчитывается по хостам на входе. Каждый хост по очереди обрабатывается, о чем сообщается в прогрессе. Если задействуется <code>libav</code>, то появляется под-прогресс в виде точек (<code>.</code>). При работе с файлами происходит подсчет строк и вывод осуществляется в процентах, но при чтении с <code>stdin</code> это не возможно, тогда прогресс просто подсчитывается возрастающими числами.</p>
+
+<p><img class="emoji" title=":computer:" alt=":computer:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f4bb.png" height="20" width="20" align="absmiddle"> <strong>Синтаксис:</strong> <code>./wcs-deepscan.sh &lt;файл-с-целями&gt; &lt;папка-выхлопа&gt;</code>. В первом аргументе можно указать <code>-</code>, это означает чтение из <code>stdin</code>. Прогресс и сообщения пользователю выводятся в <code>stderr</code> в любом случае.</p>
+
+<p><a name="wcs-full"></a></p>
+
 <h3>
-<a id="История-версий" class="anchor" href="#%D0%98%D1%81%D1%82%D0%BE%D1%80%D0%B8%D1%8F-%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D0%B9" aria-hidden="true"><span class="octicon octicon-link"></span></a>История версий:</h3>
+<a id="wcs-fullsh--Глубокое-сканирование" class="anchor" href="#wcs-fullsh--%D0%93%D0%BB%D1%83%D0%B1%D0%BE%D0%BA%D0%BE%D0%B5-%D1%81%D0%BA%D0%B0%D0%BD%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5" aria-hidden="true"><span class="octicon octicon-link"></span></a>wcs-full.sh — Глубокое сканирование</h3>
+
+<p>Этот скрипт по сути эквивалентен <code>./wcs-discover.sh &lt;файл-с-целями&gt; - | ./wcs-deepscan.sh - &lt;папка-выхлопа&gt;</code>, но скрипты исполняются <strong>не</strong> параллельно, а последовательно. Между их выполнением, все адреса собираются во временный буфер.</p>
+
+<p><img class="emoji" title=":computer:" alt=":computer:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f4bb.png" height="20" width="20" align="absmiddle"> <strong>Синтаксис:</strong> <code>./wcs-full.sh &lt;файл-с-целями&gt; &lt;папка-выхлопа&gt;</code>.</p>
+
+<p><a name="wcs-brute"></a></p>
+
+<h3>
+<a id="wcs-brutesh--Подбор-логин-паролей" class="anchor" href="#wcs-brutesh--%D0%9F%D0%BE%D0%B4%D0%B1%D0%BE%D1%80-%D0%BB%D0%BE%D0%B3%D0%B8%D0%BD-%D0%BF%D0%B0%D1%80%D0%BE%D0%BB%D0%B5%D0%B9" aria-hidden="true"><span class="octicon octicon-link"></span></a>wcs-brute.sh — Подбор логин-паролей</h3>
+
+<p>Этот скрипт помогает подобрать логин-пароли для служб цели. Поддерживаются протоколы: <code>http</code>, <code>https</code>, <code>ftp</code>. Если порт не указан, то используются <code>80</code>, <code>443</code> и <code>21</code> соответственно. Т.е. можно просто скопировать URL из браузера и всё. Вывод не управляется: <code>stdout</code> и <code>stderr</code> под контролем <code>nmap</code>.</p>
+
+<p><img class="emoji" title=":computer:" alt=":computer:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f4bb.png" height="20" width="20" align="absmiddle"> <strong>Синтаксис:</strong> <code>./wcs-brute.sh &lt;протокол&gt;://&lt;адрес&gt;[:порт][/путь]</code>. </p>
+
+<p><a name="wcs-lib"></a></p>
+
+<h3>
+<a id="wcs-libsh--Библиотека" class="anchor" href="#wcs-libsh--%D0%91%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0" aria-hidden="true"><span class="octicon octicon-link"></span></a>wcs-lib.sh — Библиотека</h3>
+
+<p>Для внутреннего использования. Вам не следует трогать это.</p>
+
+<p><a name="bugs"></a></p>
+
+<h3>
+<a id="Известные-баги" class="anchor" href="#%D0%98%D0%B7%D0%B2%D0%B5%D1%81%D1%82%D0%BD%D1%8B%D0%B5-%D0%B1%D0%B0%D0%B3%D0%B8" aria-hidden="true"><span class="octicon octicon-link"></span></a>Известные баги</h3>
+
+<ul>
+<li>Может выставиться тег <code>found</code>, но не выставиться <code>rtsp</code> — особенность скрипта <code>rtsp-methods</code> в <code>nmap</code>.</li>
+</ul>
+
+<p><a name="history"></a></p>
+
+<h3>
+<a id="История-версий" class="anchor" href="#%D0%98%D1%81%D1%82%D0%BE%D1%80%D0%B8%D1%8F-%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D0%B9" aria-hidden="true"><span class="octicon octicon-link"></span></a>История версий</h3>
 
 <p>( <a href="https://github.com/voaoom/webcamscan/releases">https://github.com/voaoom/webcamscan/releases</a> )</p>
 
-<p><strong>v2</strong> ~ 2015-10-14</p>
+<p><strong>v3</strong> — 2015-10-18</p>
+
+<ul>
+<li>Теперь необходим <code>bash</code> v.4 и <code>pcregrep</code>.</li>
+<li>Скрипт разделен на несколько скриптов: <code>./wcs-discover.sh</code>, <code>./wcs-deepscan.sh</code> и <code>./wcs-full.sh</code>.</li>
+<li>Добавлен: <code>./wcs-brute.sh</code>.</li>
+<li>Добавлена поддержка <code>stdin</code> и <code>stdout</code> — можно использовать <a href="https://ru.wikipedia.org/wiki/%D0%9A%D0%BE%D0%BD%D0%B2%D0%B5%D0%B9%D0%B5%D1%80_(UNIX)">в конвеерах</a>.</li>
+</ul>
+
+<p><strong>v2</strong> — 2015-10-14</p>
 
 <ul>
 <li>Переписано на функциях, более структурированный и оптимизированный код.</li>
@@ -208,7 +270,7 @@
 <li>Добавлены записи в <code>rtsp-urls.txt</code> для видеорегистораторов RVi.</li>
 </ul>
 
-<p><strong>v1</strong> ~ 2015-10-13</p>
+<p><strong>v1</strong> — 2015-10-13</p>
 
 <ul>
 <li>Первый релиз.</li>
@@ -232,6 +294,16 @@
       </div>
     </div>
 
-  
+            <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-68986849-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
   </body>
 </html>
