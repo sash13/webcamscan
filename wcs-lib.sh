@@ -41,10 +41,14 @@ function wcs_error () {
 	exit 1
 }
 
+function wcs_printp () {
+	printf '\r%s' "$@" 1>&2
+	return 0
+}
 
 # Прогресс: $1 - позиция, $2 - максимум.
 function wcs_echo_progress () {
-	wcs_print " $(bc -l <<< "scale=1; 100.0*($1-0.5)/$2")%"
+	wcs_printp " $(bc -l <<< "scale=1; 100.0*($1-0.5)/$2")%"
 }
 
 function wcs_echo_subprogress () {
@@ -322,4 +326,3 @@ function wcs_clean () {
 		fi
 	fi
 }
-
