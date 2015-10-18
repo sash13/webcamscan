@@ -37,7 +37,7 @@ function wcs_printb () {
 }
 
 function wcs_error () {
-	printf '%b' "$@" 1>&2
+	printf '\n%s\n\n' "$@" 1>&2
 	exit 1
 }
 
@@ -181,8 +181,13 @@ function wcs_libav_probe () {
 # $1 - трансляция, $2 - файл, stdout - лог, stderr - сообщения wcs
 function wcs_libav_screenshot () {
 	timeout -k 5 25 avconv -v quiet -i "$1" -ss 3 -qscale 0 -t 1 -r 1 "$2" 2>&1
-	[[ -f "$2" ]] && wcs_fix_own "$2" \
-		&& wcs_println "Скриншот '$1' сохранен в '$2'." || wcs_println "Не удаётся сделать скриншот '$1'!"
+	if [[ -f "$2" ]]
+	then
+		wcs_fix_own "$2"
+		wcs_println "Скриншот '$1' сохранен в '$2'."
+	else
+		wcs_println "Не удаётся сделать скриншот '$1'!"
+	fi
 	return 0
 }
 
