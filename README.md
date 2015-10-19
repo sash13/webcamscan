@@ -126,6 +126,9 @@ ___
 
 ( https://github.com/voaoom/webcamscan/releases )
 
+**v3.2** — 2015-10-19
+* Исправлена неработоспособность `./wcs-brute.sh`.
+
 **v3.1** — 2015-10-19
 * [Улучшен прогресс](https://github.com/voaoom/webcamscan/pull/2).
 

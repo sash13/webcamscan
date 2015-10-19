@@ -4,10 +4,10 @@
 wcs_check_pcregrep
 wcs_check_root
 
-rproto=$(wcs_println "$1" | pcregrep -o1 -i "$PCRE_URL")
-rhost=$(wcs_println "$1" | pcregrep -o2 -i "$PCRE_URL")
-rport=$(wcs_println "$1" | pcregrep -o4 -i "$PCRE_URL")
-rpath=$(wcs_println "$1" | pcregrep -o5 -i "$PCRE_URL")
+rproto=$(echo "$1" | pcregrep -o1 -i "$PCRE_URL")
+rhost=$(echo "$1" | pcregrep -o2 -i "$PCRE_URL")
+rport=$(echo "$1" | pcregrep -o4 -i "$PCRE_URL")
+rpath=$(echo "$1" | pcregrep -o5 -i "$PCRE_URL")
 
 # Пути по умолчанию
 [[ -z "$rpath" ]] && rpath='/'
