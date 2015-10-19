@@ -126,6 +126,9 @@ ___
 
 ( https://github.com/voaoom/webcamscan/releases )
 
+**v3.1** — 2015-10-19
+* [Улучшен прогресс](https://github.com/voaoom/webcamscan/pull/2).
+
 **v3** — 2015-10-18
 * Теперь необходим `bash` v.4 и `pcregrep`.
 * Скрипт разделен на несколько скриптов: `./wcs-discover.sh`, `./wcs-deepscan.sh` и `./wcs-full.sh`.
