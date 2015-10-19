@@ -3,6 +3,7 @@
 # Загружаем настройки
 . "$(dirname "$0")/wcs-config.sh"
 export NMAPDIR="${NMAPDIR:-.}"
+export PROGRESS="${PROGRESS:-dynamic}"
 export WRITE_ALL_HOSTS="${WRITE_ALL_HOSTS:-true}"
 export HOST_TIMELIMIT="${HOST_TIMELIMIT:-5m}"
 export RTSP_URLS="${RTSP_URLS:-./rtsp-urls.txt}"
@@ -17,6 +18,7 @@ export CLEANUP="${CLEANUP:-true}"
 # 'Константные' регексы
 export REGEX_IP='([0-9]{1,3}\.){3}[0-9]{1,3}'
 export REGEX_URL_RSTP='rtsp://[0-9.]+/\S*'
+export REGEX_NUMBER='^[0-9]+$'
 #                1      1   2           23 4      43 5  5
 export PCRE_URL='([a-z]+)://([a-z0-9.-]+)(:([0-9]+))?(.*)'
 
@@ -36,19 +38,52 @@ function wcs_printb () {
 	return 0
 }
 
+function wcs_printp () {
+	printf '\r%s' "$@" 1>&2
+	return 0
+}
+
 function wcs_error () {
 	printf '\n%s\n\n' "$@" 1>&2
 	exit 1
 }
 
-
 # Прогресс: $1 - позиция, $2 - максимум.
 function wcs_echo_progress () {
-	wcs_print " $(bc -l <<< "scale=1; 100.0*($1-0.5)/$2")%"
+	local p
+	if [[ "$1" =~ $REGEX_NUMBER && "$2" =~ $REGEX_NUMBER ]]
+	then
+		p="$(bc -l <<< "scale=1; 100.0*($1-0.5)/$2")%"
+	else
+		p="$1"
+	fi
+
+	if [[ "$PROGRESS" == 'dynamic' ]]
+	then
+		wcs_printp '        '
+		wcs_printp " $p"
+	elif [[ "$PROGRESS" == 'static' ]]
+	then
+		wcs_print " $p"
+	fi
+	return 0
 }
 
 function wcs_echo_subprogress () {
 	wcs_print '.'
+	return 0
+}
+
+function wcs_echo_progress_stop () {
+	if [[ "$PROGRESS" == 'dynamic' ]]
+	then
+		wcs_printp '        '
+		wcs_printp ''
+	elif [[ "$PROGRESS" == 'static' ]]
+	then
+		wcs_println ''
+	fi
+	return 0
 }
 
 
@@ -113,7 +148,7 @@ function wcs_iterate_file () {
 		wcs_echo_progress "$(( i++ ))" "$n"
 		$@ "$item" #INVOKE CALLBACK
 	done < "$file"
-	wcs_println # NL после прогресса
+	wcs_echo_progress_stop
 	return 0
 }
 
@@ -124,10 +159,10 @@ function wcs_iterate_stdin () {
 	local item
 	while IFS=$'\n' read -r item || [[ -n "$item" ]]
 	do
-		wcs_print " $(( i++ ))"
+		wcs_echo_progress " $(( i++ ))"
 		$@ "$item" #INVOKE CALLBACK
 	done
-	wcs_println # NL после прогресса
+	wcs_echo_progress_stop
 	return 0
 }
 
@@ -322,4 +357,3 @@ function wcs_clean () {
 		fi
 	fi
 }
-

@@ -6,6 +6,8 @@
 
 #NMAPDIR=.
 
+#PROGRESS=dynamic
+
 #WRITE_ALL_HOSTS=true
 
 #HOST_TIMELIMIT=5m
